@@ -1,0 +1,2 @@
+1.0.0
+- First release. Up to date with OpenFeature .NET SDK 1.0.1
