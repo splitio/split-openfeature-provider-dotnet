@@ -1,0 +1,17 @@
+# - feature_name:
+#     treatment: "treatment_applied_to_this_entry"
+#     keys: "single_key_or_list"
+#     config: "{\"desc\" : \"this applies only to ON treatment\"}"
+
+- my_feature:
+    treatment: "on"
+    keys: "key"
+    config: "{\"desc\" : \"this applies only to ON treatment\"}"
+- my_feature:
+    treatment: "off"
+- some_other_feature:
+    treatment: "on"
+- other_feature:
+    treatment: "on"
+    keys: ["key_1", "key_2"]
+    config: "{\"desc\" : \"this overrides multiple keys and returns off treatment for those keys\"}"
