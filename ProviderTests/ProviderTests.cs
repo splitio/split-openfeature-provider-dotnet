@@ -17,11 +17,8 @@ public class ProviderTests
         var config = new ConfigurationOptions
         {
             LocalhostFilePath = "../../../split.yaml",
-            Endpoint = "https://sdk.split-stage.io/api/",
-            EventsEndpoint = "https://events.split-stage.io/api/",
             Logger = new CustomLogger()
         };
-        //var factory = new SplitFactory("vbol2c16m1913f6ok2kcekr0s9o5ht7u59j7", config);
         var factory = new SplitFactory("localhost", config);
         var sdk = factory.Client();
         try
