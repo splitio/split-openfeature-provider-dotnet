@@ -9,8 +9,8 @@ namespace Splitio.OpenFeature
 {
     public class Provider : FeatureProvider
     {
-        private readonly Metadata _metadata = new Metadata("Split Client");
-        private ISplitClient _client;
+        private readonly Metadata _metadata = new("Split Client");
+        private readonly ISplitClient _client;
 
         public Provider(ISplitClient client)
         {

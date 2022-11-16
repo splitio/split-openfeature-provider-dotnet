@@ -9,7 +9,7 @@ namespace ProviderTests;
 [TestClass]
 public class ProviderTests
 {
-    FeatureClient client;
+    readonly FeatureClient client;
 
     public ProviderTests()
     {
@@ -58,7 +58,9 @@ public class ProviderTests
         var resultInt = await client.GetIntegerValue(flagName, defaultInt);
         Assert.AreEqual(defaultInt, resultInt);
 
-        // TODO: Need to do structure
+        Structure defaultStructure = Structure.Builder().Set("foo", new Value("bar")).Build();
+        Value resultStructure = await client.GetObjectValue(flagName, new Value(defaultStructure));
+        Assert.IsTrue(StructuresMatch(defaultStructure, resultStructure.AsStructure));
     }
 
     [TestMethod]
