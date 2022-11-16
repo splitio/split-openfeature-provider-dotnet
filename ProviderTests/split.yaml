@@ -10,3 +10,4 @@
     treatment: "32"
 - obj_feature:
     treatment: "{\"key\": \"value\"}"
+    config: "{\"key\": \"value\"}"

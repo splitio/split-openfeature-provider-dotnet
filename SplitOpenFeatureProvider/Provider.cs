@@ -3,6 +3,7 @@ using OpenFeature.Model;
 using OpenFeature.Constant;
 using OpenFeature.Error;
 using Splitio.Services.Client.Interfaces;
+using Newtonsoft.Json.Linq;
 
 namespace Splitio.OpenFeature
 {
@@ -84,7 +85,29 @@ namespace Splitio.OpenFeature
 
         public override Task<ResolutionDetails<Value>> ResolveStructureValue(string flagKey, Value defaultValue, EvaluationContext context)
         {
-            throw new NotImplementedException("Not implemented");
+            var key = GetTargetingKey(context);
+            var originalResult = _client.GetTreatmentWithConfig(key, flagKey, TransformContext(context));
+            if (originalResult.Treatment == "control")
+            {
+                return Task.FromResult(new ResolutionDetails<Value>(flagKey, defaultValue, variant: originalResult.Treatment, errorType: ErrorType.FlagNotFound));
+            }
+            try {
+                var jsonString = originalResult.Config;
+                var dict = JObject.Parse(jsonString).ToObject<Dictionary<string, string>>();
+                if (dict == null)
+                {
+                    throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult.Config} is not an object");
+                }
+                var dict2 = dict.ToDictionary(x => x.Key, x => new Value(x.Value));
+                var dictValue = new Value(new Structure(dict2));
+                return Task.FromResult(new ResolutionDetails<Value>(flagKey, dictValue, variant: originalResult.Treatment, reason: Reason.TargetingMatch, errorType: ErrorType.None));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception parsing JSON: {ex}");
+                Console.WriteLine($"Attempted to parse: {originalResult.Config}");
+                throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult.Config} is not an object");
+            }
         }
 
         private static string GetTargetingKey(EvaluationContext context)

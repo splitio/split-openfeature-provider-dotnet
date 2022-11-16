@@ -111,11 +111,13 @@ public class ProviderTests
         Assert.AreEqual(32, result);
     }
 
-    //[TestMethod]
-    //public async Task GetObjectSplitTest()
-    //{
-    //    FeatureClient client = GetClient();
-    //}
+    [TestMethod]
+    public async Task GetObjectSplitTest()
+    {
+        var result = await client.GetObjectValue("obj_feature", new Value());
+        Structure expectedValue = Structure.Builder().Set("key", new Value("value")).Build();
+        Assert.IsTrue(StructuresMatch(expectedValue, result.AsStructure));
+    }
 
     [TestMethod]
     public async Task GetDoubleSplitTest()
@@ -160,12 +162,6 @@ public class ProviderTests
         Assert.AreEqual(ErrorType.None, details.ErrorType);
     }
 
-    //[TestMethod]
-    //public async Task GetObjectDetailsTest()
-    //{
-    //    FeatureClient client = GetClient();
-    //}
-
     [TestMethod]
     public async Task GetDoubleDetailsTest()
     {
@@ -175,6 +171,19 @@ public class ProviderTests
         Assert.AreEqual(32D, details.Value);
         // the flag has a treatment of "off", this is returned as a value of false but the variant is still "off"
         Assert.AreEqual("32", details.Variant);
+        Assert.AreEqual(ErrorType.None, details.ErrorType);
+    }
+
+    [TestMethod]
+    public async Task GetObjectDetailsTest()
+    {
+        var details = await client.GetObjectDetails("obj_feature", new Value());
+        Assert.AreEqual("obj_feature", details.FlagKey);
+        Assert.AreEqual(Reason.TargetingMatch, details.Reason);
+        Structure expected = Structure.Builder().Set("key", new Value("value")).Build();
+        Assert.IsTrue(StructuresMatch(expected, details.Value.AsStructure));
+        // the flag's treatment is stored as a string, and the variant is that raw string
+        Assert.AreEqual("{\"key\": \"value\"}", details.Variant);
         Assert.AreEqual(ErrorType.None, details.ErrorType);
     }
 
@@ -217,9 +226,35 @@ public class ProviderTests
         Assert.AreEqual(Reason.Error, details.Reason);
     }
 
-    //[TestMethod]
-    //public async Task GetObjectFailTest()
-    //{
-    //    FeatureClient client = GetClient();
-    //}
+    [TestMethod]
+    public async Task GetObjectFailTest()
+    {
+        // attempt to fetch an int as an object. Should result in the default
+        Structure defaultValue = Structure.Builder().Set("key", new Value("value")).Build();
+        var value = await client.GetObjectValue("int_feature", new Value(defaultValue));
+        Assert.IsTrue(StructuresMatch(defaultValue, value.AsStructure));
+
+        var details = await client.GetObjectDetails("int_feature", new Value(defaultValue));
+        Assert.IsTrue(StructuresMatch(defaultValue, details.Value.AsStructure));
+        Assert.AreEqual(ErrorType.ParseError, details.ErrorType);
+        Assert.AreEqual(Reason.Error, details.Reason);
+    }
+
+    private static bool StructuresMatch(Structure s1, Structure s2)
+    {
+        if (s1.Count != s2.Count)
+        {
+            return false;
+        }
+        foreach (string key in s1.Keys)
+        {
+            var v1 = s1.GetValue(key);
+            var v2 = s2.GetValue(key);
+            if (v1.ToString() != v2.ToString())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 }
