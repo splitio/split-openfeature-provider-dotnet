@@ -18,7 +18,7 @@ Api api = OpenFeature.Api.Instance;
 api.setProvider(new Provider("YOUR_API_KEY"));
 ```
 
-If you are more familiar with Split or want access to other initialization options, you can provide a `Split Client` to the constructor. See the [Split Java .NET Documentation](https://help.split.io/hc/en-us/articles/360020240172--NET-SDK) for more information.
+If you are more familiar with Split or want access to other initialization options, you can provide a `Split Client` to the constructor. See the [Split .NET Documentation](https://help.split.io/hc/en-us/articles/360020240172--NET-SDK) for more information.
 ```c#
 using OpenFeature;
 using Splitio.OpenFeature;
