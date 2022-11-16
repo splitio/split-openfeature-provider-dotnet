@@ -1,9 +1,9 @@
 - my_feature:
+    treatment: "off"
+- my_feature:
     treatment: "on"
     keys: "key"
     config: "{\"desc\" : \"this applies only to ON treatment\"}"
-- my_feature:
-    treatment: "off"
 - some_other_feature:
     treatment: "off"
 - int_feature:
