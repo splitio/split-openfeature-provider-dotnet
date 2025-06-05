@@ -32,7 +32,7 @@ public class ProviderTests
         }
 
         // Sets the provider used by the client
-        OpenFeature.Api.Instance.SetProvider(new Provider(sdk));
+        OpenFeature.Api.Instance.SetProviderAsync(new Provider(sdk));
 
         // Gets a instance of the feature flag client
         client = OpenFeature.Api.Instance.GetClient();
@@ -45,21 +45,21 @@ public class ProviderTests
     {
         String flagName = "random-non-existent-feature";
 
-        var result = await client.GetBooleanValue(flagName, false);
+        var result = await client.GetBooleanValueAsync(flagName, false);
         Assert.IsFalse(result);
-        result = await client.GetBooleanValue(flagName, true);
+        result = await client.GetBooleanValueAsync(flagName, true);
         Assert.IsTrue(result);
 
         String defaultString = "blah";
-        var resultString = await client.GetStringValue(flagName, defaultString);
+        var resultString = await client.GetStringValueAsync(flagName, defaultString);
         Assert.AreEqual(defaultString, resultString);
 
         int defaultInt = 100;
-        var resultInt = await client.GetIntegerValue(flagName, defaultInt);
+        var resultInt = await client.GetIntegerValueAsync(flagName, defaultInt);
         Assert.AreEqual(defaultInt, resultInt);
 
         Structure defaultStructure = Structure.Builder().Set("foo", new Value("bar")).Build();
-        Value resultStructure = await client.GetObjectValue(flagName, new Value(defaultStructure));
+        Value resultStructure = await client.GetObjectValueAsync(flagName, new Value(defaultStructure));
         Assert.IsTrue(StructuresMatch(defaultStructure, resultStructure.AsStructure));
     }
 
@@ -67,7 +67,7 @@ public class ProviderTests
     public async Task MissingTargetingKeyTest()
     {
         client.SetContext(EvaluationContext.Builder().Build());
-        FlagEvaluationDetails<bool> details = await client.GetBooleanDetails("non-existent-feature", false);
+        FlagEvaluationDetails<bool> details = await client.GetBooleanDetailsAsync("non-existent-feature", false);
         Assert.IsFalse(details.Value);
         Assert.AreEqual(ErrorType.TargetingKeyMissing, details.ErrorType);
     }
@@ -75,7 +75,7 @@ public class ProviderTests
     [TestMethod]
     public async Task GetControlVariantNonExistentSplit()
     {
-        FlagEvaluationDetails<bool> details = await client.GetBooleanDetails("non-existent-feature", false);
+        FlagEvaluationDetails<bool> details = await client.GetBooleanDetailsAsync("non-existent-feature", false);
         Assert.IsFalse(details.Value);
         Assert.AreEqual("control", details.Variant);
         Assert.AreEqual(ErrorType.FlagNotFound, details.ErrorType);
@@ -84,39 +84,39 @@ public class ProviderTests
     [TestMethod]
     public async Task GetBooleanSplitTest()
     {
-        var result = await client.GetBooleanValue("some_other_feature", true);
+        var result = await client.GetBooleanValueAsync("some_other_feature", true);
         Assert.IsFalse(result);
     }
 
     [TestMethod]
     public async Task GetBooleanSplitWithKeyTest()
     {
-        var result = await client.GetBooleanValue("my_feature", false);
+        var result = await client.GetBooleanValueAsync("my_feature", false);
         Assert.IsTrue(result);
 
         var context = EvaluationContext.Builder().Set("targetingKey", "randomKey").Build();
-        result = await client.GetBooleanValue("my_feature", true, context);
+        result = await client.GetBooleanValueAsync("my_feature", true, context);
         Assert.IsFalse(result);
     }
 
     [TestMethod]
     public async Task GetStringSplitTest()
     {
-        var result = await client.GetStringValue("some_other_feature", "on");
+        var result = await client.GetStringValueAsync("some_other_feature", "on");
         Assert.AreEqual("off", result);
     }
 
     [TestMethod]
     public async Task GetIntegerSplitTest()
     {
-        var result = await client.GetIntegerValue("int_feature", 0);
+        var result = await client.GetIntegerValueAsync("int_feature", 0);
         Assert.AreEqual(32, result);
     }
 
     [TestMethod]
     public async Task GetObjectSplitTest()
     {
-        var result = await client.GetObjectValue("obj_feature", new Value());
+        var result = await client.GetObjectValueAsync("obj_feature", new Value());
         Structure expectedValue = Structure.Builder().Set("key", new Value("value")).Build();
         Assert.IsTrue(StructuresMatch(expectedValue, result.AsStructure));
     }
@@ -124,14 +124,14 @@ public class ProviderTests
     [TestMethod]
     public async Task GetDoubleSplitTest()
     {
-        var result = await client.GetDoubleValue("int_feature", 0D);
+        var result = await client.GetDoubleValueAsync("int_feature", 0D);
         Assert.AreEqual(32D, result);
     }
 
     [TestMethod]
     public async Task GetBooleanDetailsTest()
     {
-        var details = await client.GetBooleanDetails("some_other_feature", true);
+        var details = await client.GetBooleanDetailsAsync("some_other_feature", true);
         Assert.AreEqual("some_other_feature", details.FlagKey);
         Assert.AreEqual(Reason.TargetingMatch, details.Reason);
         Assert.IsFalse(details.Value);
@@ -141,9 +141,9 @@ public class ProviderTests
     }
 
     [TestMethod]
-    public async Task GetIntegerDetailsTest()
+    public async Task GetIntegerDetailsAsyncTest()
     {
-        var details = await client.GetIntegerDetails("int_feature", 0);
+        var details = await client.GetIntegerDetailsAsync("int_feature", 0);
         Assert.AreEqual("int_feature", details.FlagKey);
         Assert.AreEqual(Reason.TargetingMatch, details.Reason);
         Assert.AreEqual(32, details.Value);
@@ -153,9 +153,9 @@ public class ProviderTests
     }
 
     [TestMethod]
-    public async Task GetStringDetailsTest()
+    public async Task GetStringDetailsAsyncTest()
     {
-        var details = await client.GetStringDetails("some_other_feature", "blah");
+        var details = await client.GetStringDetailsAsync("some_other_feature", "blah");
         Assert.AreEqual("some_other_feature", details.FlagKey);
         Assert.AreEqual(Reason.TargetingMatch, details.Reason);
         Assert.AreEqual("off", details.Value);
@@ -165,9 +165,9 @@ public class ProviderTests
     }
 
     [TestMethod]
-    public async Task GetDoubleDetailsTest()
+    public async Task GetDoubleDetailsAsyncTest()
     {
-        var details = await client.GetDoubleDetails("int_feature", 0D);
+        var details = await client.GetDoubleDetailsAsync("int_feature", 0D);
         Assert.AreEqual("int_feature", details.FlagKey);
         Assert.AreEqual(Reason.TargetingMatch, details.Reason);
         Assert.AreEqual(32D, details.Value);
@@ -177,9 +177,9 @@ public class ProviderTests
     }
 
     [TestMethod]
-    public async Task GetObjectDetailsTest()
+    public async Task GetObjectDetailsAsyncTest()
     {
-        var details = await client.GetObjectDetails("obj_feature", new Value());
+        var details = await client.GetObjectDetailsAsync("obj_feature", new Value());
         Assert.AreEqual("obj_feature", details.FlagKey);
         Assert.AreEqual(Reason.TargetingMatch, details.Reason);
         Structure expected = Structure.Builder().Set("key", new Value("value")).Build();
@@ -193,10 +193,10 @@ public class ProviderTests
     public async Task GetBooleanFailTest()
     {
         // attempt to fetch an object treatment as a Boolean. Should result in the default
-        var value = await client.GetBooleanValue("obj_feature", false);
+        var value = await client.GetBooleanValueAsync("obj_feature", false);
         Assert.IsFalse(value);
 
-        var details = await client.GetBooleanDetails("obj_feature", false);
+        var details = await client.GetBooleanDetailsAsync("obj_feature", false);
         Assert.IsFalse(details.Value);
         Assert.AreEqual(ErrorType.ParseError, details.ErrorType);
         Assert.AreEqual(Reason.Error, details.Reason);
@@ -206,10 +206,10 @@ public class ProviderTests
     public async Task GetIntegerFailTest()
     {
         // attempt to fetch an object treatment as an integer. Should result in the default
-        var value = await client.GetIntegerValue("obj_feature", 10);
+        var value = await client.GetIntegerValueAsync("obj_feature", 10);
         Assert.AreEqual(10, value);
 
-        var details = await client.GetIntegerDetails("obj_feature", 10);
+        var details = await client.GetIntegerDetailsAsync("obj_feature", 10);
         Assert.AreEqual(10, details.Value);
         Assert.AreEqual(ErrorType.ParseError, details.ErrorType);
         Assert.AreEqual(Reason.Error, details.Reason);
@@ -219,10 +219,10 @@ public class ProviderTests
     public async Task GetDoubleFailTest()
     {
         // attempt to fetch an object treatment as a double. Should result in the default
-        var value = await client.GetDoubleValue("obj_feature", 10D);
+        var value = await client.GetDoubleValueAsync("obj_feature", 10D);
         Assert.AreEqual(10D, value);
 
-        var details = await client.GetDoubleDetails("obj_feature", 10D);
+        var details = await client.GetDoubleDetailsAsync("obj_feature", 10D);
         Assert.AreEqual(10D, details.Value);
         Assert.AreEqual(ErrorType.ParseError, details.ErrorType);
         Assert.AreEqual(Reason.Error, details.Reason);
@@ -233,10 +233,10 @@ public class ProviderTests
     {
         // attempt to fetch an int as an object. Should result in the default
         Structure defaultValue = Structure.Builder().Set("key", new Value("value")).Build();
-        var value = await client.GetObjectValue("int_feature", new Value(defaultValue));
+        var value = await client.GetObjectValueAsync("int_feature", new Value(defaultValue));
         Assert.IsTrue(StructuresMatch(defaultValue, value.AsStructure));
 
-        var details = await client.GetObjectDetails("int_feature", new Value(defaultValue));
+        var details = await client.GetObjectDetailsAsync("int_feature", new Value(defaultValue));
         Assert.IsTrue(StructuresMatch(defaultValue, details.Value.AsStructure));
         Assert.AreEqual(ErrorType.ParseError, details.ErrorType);
         Assert.AreEqual(Reason.Error, details.Reason);

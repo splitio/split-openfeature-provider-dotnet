@@ -12,8 +12,8 @@
     <None Remove="Microsoft.TestPlatform" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="OpenFeature" Version="1.0.1" />
-    <PackageReference Include="Splitio" Version="7.2.1" />
+    <PackageReference Include="OpenFeature" Version="2.6.0" />
+    <PackageReference Include="Splitio" Version="7.11.0" />
     <PackageReference Include="Microsoft.TestPlatform" Version="17.4.0" />
   </ItemGroup>
 </Project>
