@@ -5,7 +5,7 @@
 This Provider is designed to allow the use of OpenFeature with Split, the platform for controlled rollouts, serving features to your users via the Split feature flag to manage your complete customer experience.
 
 ## Compatibility
-This SDK is compatible with .NET 6.0 and higher.
+This SDK is compatible with .NET 8.0, 9.0, .NET Framework 4.6.2+ and .NET Standard 2.0.
 
 ## Getting started
 Below is a simple example that describes the instantiation of the Split Provider. Please see the [OpenFeature Documentation](https://docs.openfeature.dev/docs/reference/concepts/evaluation-api) for details on how to use the OpenFeature SDK.

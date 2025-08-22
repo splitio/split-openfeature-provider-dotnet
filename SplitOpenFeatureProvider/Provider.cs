@@ -1,15 +1,20 @@
+using Newtonsoft.Json.Linq;
 using OpenFeature;
-using OpenFeature.Model;
 using OpenFeature.Constant;
 using OpenFeature.Error;
+using OpenFeature.Model;
 using Splitio.Services.Client.Interfaces;
-using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Splitio.OpenFeature
 {
     public class Provider : FeatureProvider
     {
-        private readonly Metadata _metadata = new("Split Client");
+        private readonly Metadata _metadata = new Metadata("Split Client");
         private readonly ISplitClient _client;
 
         public Provider(ISplitClient client)
@@ -20,7 +25,7 @@ namespace Splitio.OpenFeature
         public override Metadata GetMetadata() => _metadata;
 
         public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
             var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
@@ -33,7 +38,7 @@ namespace Splitio.OpenFeature
         }
 
         public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
             var evaluationResult = _client.GetTreatment(key, flagKey, TransformContext(context));
@@ -45,7 +50,7 @@ namespace Splitio.OpenFeature
         }
 
         public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
             var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
@@ -60,11 +65,11 @@ namespace Splitio.OpenFeature
             catch (FormatException)
             {
                 throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult} is not an int");
-            };
+            }
         }
 
         public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
             var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
@@ -84,7 +89,7 @@ namespace Splitio.OpenFeature
         }
 
         public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
             var originalResult = _client.GetTreatmentWithConfig(key, flagKey, TransformContext(context));
@@ -131,12 +136,13 @@ namespace Splitio.OpenFeature
 
         private static bool ParseBoolean(string boolStr)
         {
-            return boolStr.ToLower() switch
-            {
-                "on" or "true" => true,
-                "off" or "false" => false,
-                _ => throw new FeatureProviderException(ErrorType.ParseError, $"{boolStr} is not a boolean"),
-            };
+            var boolStrLower = boolStr.ToLower();
+            if (boolStrLower == "on" || boolStrLower == "true")
+                return true;
+            if (boolStrLower == "off" || boolStrLower == "false")
+                return false;
+
+            throw new FeatureProviderException(ErrorType.ParseError, $"{boolStr} is not a boolean");
         }
     }
 }

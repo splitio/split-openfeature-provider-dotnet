@@ -1,4 +1,5 @@
 ﻿using Splitio.Services.Logger;
+using System;
 
 namespace ProviderTests
 {
