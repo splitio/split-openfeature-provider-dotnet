@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0;netstandard2.0;net462</TargetFrameworks>
 	<RootNamespace>Splitio.OpenFeature</RootNamespace>
-	<PackageReadmeFile>../README.md</PackageReadmeFile>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,5 +15,8 @@
     <PackageReference Include="OpenFeature" Version="2.6.0" />
     <PackageReference Include="Splitio" Version="7.11.0" />
     <PackageReference Include="Microsoft.TestPlatform" Version="17.4.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>
