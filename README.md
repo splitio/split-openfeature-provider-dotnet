@@ -15,7 +15,7 @@ using OpenFeature;
 using Splitio.OpenFeature;
 
 Api api = OpenFeature.Api.Instance;
-api.setProvider(new Provider("YOUR_API_KEY"));
+api.setProviderAsync(new Provider("YOUR_API_KEY"));
 ```
 
 If you are more familiar with Split or want access to other initialization options, you can provide a `Split Client` to the constructor. See the [Split .NET Documentation](https://help.split.io/hc/en-us/articles/360020240172--NET-SDK) for more information.
@@ -31,7 +31,7 @@ var config = new ConfigurationOptions
    Ready = 10000
 };
 var splitClient = new SplitFactory("YOUR_API_KEY", config).Client();
-api.SetProvider(new Provider(splitClient));
+api.SetProviderAsync(new Provider(splitClient));
 ```
 
 ## Use of OpenFeature with Split
@@ -40,7 +40,7 @@ After the initial setup you can use OpenFeature according to their [documentatio
 One important note is that the Split Provider **requires a targeting key** to be set. Often times this should be set when evaluating the value of a flag by [setting an EvaluationContext](https://docs.openfeature.dev/docs/reference/concepts/evaluation-context) which contains the targeting key. An example flag evaluation is
 ```csharp
 var context = EvaluationContext.Builder().Set("targetingKey", "randomKey").Build();
-var result = await client.GetBooleanValue("boolFlag", false, context);
+var result = await client.GetBooleanValueAsync("boolFlag", false, context);
 ```
 If the same targeting key is used repeatedly, the evaluation context may be set at the client level 
 ```csharp

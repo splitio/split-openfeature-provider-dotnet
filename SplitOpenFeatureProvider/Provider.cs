@@ -1,4 +1,4 @@
-﻿using OpenFeature;
+using OpenFeature;
 using OpenFeature.Model;
 using OpenFeature.Constant;
 using OpenFeature.Error;
@@ -20,7 +20,7 @@ namespace Splitio.OpenFeature
         public override Metadata GetMetadata() => _metadata;
 
         public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue,
-            EvaluationContext context, CancellationToken cancellationToken = default)
+            EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
             var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
@@ -33,7 +33,7 @@ namespace Splitio.OpenFeature
         }
 
         public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue,
-            EvaluationContext context, CancellationToken cancellationToken = default)
+            EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
             var evaluationResult = _client.GetTreatment(key, flagKey, TransformContext(context));
@@ -45,7 +45,7 @@ namespace Splitio.OpenFeature
         }
 
         public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue,
-            EvaluationContext context, CancellationToken cancellationToken = default)
+            EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
             var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
@@ -64,7 +64,7 @@ namespace Splitio.OpenFeature
         }
 
         public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue,
-            EvaluationContext context, CancellationToken cancellationToken = default)
+            EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
             var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
@@ -83,8 +83,8 @@ namespace Splitio.OpenFeature
             }
         }
 
-        public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, 
-            EvaluationContext context, CancellationToken cancellationToken = default)
+        public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue,
+            EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
             var originalResult = _client.GetTreatmentWithConfig(key, flagKey, TransformContext(context));

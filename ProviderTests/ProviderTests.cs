@@ -183,7 +183,7 @@ public class ProviderTests
     }
 
     [TestMethod]
-    public async Task GetIntegerDetailsTest()
+    public async Task GetIntegerDetailsAsyncTest()
     {
         await Api.Instance.SetProviderAsync(new Provider(sdk));
         client = OpenFeature.Api.Instance.GetClient();
@@ -200,7 +200,7 @@ public class ProviderTests
     }
 
     [TestMethod]
-    public async Task GetStringDetailsTest()
+    public async Task GetStringDetailsAsyncTest()
     {
         await Api.Instance.SetProviderAsync(new Provider(sdk));
         client = OpenFeature.Api.Instance.GetClient();
@@ -217,7 +217,7 @@ public class ProviderTests
     }
 
     [TestMethod]
-    public async Task GetDoubleDetailsTest()
+    public async Task GetDoubleDetailsAsyncTest()
     {
         await Api.Instance.SetProviderAsync(new Provider(sdk));
         client = OpenFeature.Api.Instance.GetClient();
@@ -234,7 +234,7 @@ public class ProviderTests
     }
 
     [TestMethod]
-    public async Task GetObjectDetailsTest()
+    public async Task GetObjectDetailsAsyncTest()
     {
         await Api.Instance.SetProviderAsync(new Provider(sdk));
         client = OpenFeature.Api.Instance.GetClient();
