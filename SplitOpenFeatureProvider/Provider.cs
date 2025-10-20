@@ -137,6 +137,6 @@ namespace Splitio.OpenFeature
                 "off" or "false" => false,
                 _ => throw new FeatureProviderException(ErrorType.ParseError, $"{boolStr} is not a boolean"),
             };
-        }
+        }       
     }
 }

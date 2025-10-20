@@ -3,13 +3,15 @@ using OpenFeature.Constant;
 using OpenFeature.Model;
 using Splitio.Services.Client.Classes;
 using Splitio.OpenFeature;
+using Splitio.Services.Client.Interfaces;
 
 namespace ProviderTests;
 
 [TestClass]
 public class ProviderTests
 {
-    readonly FeatureClient client;
+    FeatureClient client;
+    ISplitClient sdk;
 
     public ProviderTests()
     {
@@ -20,7 +22,7 @@ public class ProviderTests
             Logger = new CustomLogger()
         };
         var factory = new SplitFactory("localhost", config);
-        var sdk = factory.Client();
+        sdk = factory.Client();
         try
         {
             sdk.BlockUntilReady(10000);
@@ -30,19 +32,16 @@ public class ProviderTests
             Console.WriteLine($"Exception initializing Split client! {ex}");
             throw;
         }
-
-        // Sets the provider used by the client
-        OpenFeature.Api.Instance.SetProviderAsync(new Provider(sdk));
-
-        // Gets a instance of the feature flag client
-        client = OpenFeature.Api.Instance.GetClient();
-        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
-        client.SetContext(context);
     }
 
     [TestMethod]
     public async Task UseDefaultTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         String flagName = "random-non-existent-feature";
 
         var result = await client.GetBooleanValueAsync(flagName, false);
@@ -66,6 +65,9 @@ public class ProviderTests
     [TestMethod]
     public async Task MissingTargetingKeyTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+
         client.SetContext(EvaluationContext.Builder().Build());
         FlagEvaluationDetails<bool> details = await client.GetBooleanDetailsAsync("non-existent-feature", false);
         Assert.IsFalse(details.Value);
@@ -75,6 +77,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetControlVariantNonExistentSplit()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         FlagEvaluationDetails<bool> details = await client.GetBooleanDetailsAsync("non-existent-feature", false);
         Assert.IsFalse(details.Value);
         Assert.AreEqual("control", details.Variant);
@@ -84,6 +91,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetBooleanSplitTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var result = await client.GetBooleanValueAsync("some_other_feature", true);
         Assert.IsFalse(result);
     }
@@ -91,10 +103,15 @@ public class ProviderTests
     [TestMethod]
     public async Task GetBooleanSplitWithKeyTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var result = await client.GetBooleanValueAsync("my_feature", false);
         Assert.IsTrue(result);
 
-        var context = EvaluationContext.Builder().Set("targetingKey", "randomKey").Build();
+        context = EvaluationContext.Builder().Set("targetingKey", "randomKey").Build();
         result = await client.GetBooleanValueAsync("my_feature", true, context);
         Assert.IsFalse(result);
     }
@@ -102,6 +119,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetStringSplitTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var result = await client.GetStringValueAsync("some_other_feature", "on");
         Assert.AreEqual("off", result);
     }
@@ -109,6 +131,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetIntegerSplitTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var result = await client.GetIntegerValueAsync("int_feature", 0);
         Assert.AreEqual(32, result);
     }
@@ -116,6 +143,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetObjectSplitTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var result = await client.GetObjectValueAsync("obj_feature", new Value());
         Structure expectedValue = Structure.Builder().Set("key", new Value("value")).Build();
         Assert.IsTrue(StructuresMatch(expectedValue, result.AsStructure));
@@ -124,6 +156,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetDoubleSplitTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var result = await client.GetDoubleValueAsync("int_feature", 0D);
         Assert.AreEqual(32D, result);
     }
@@ -131,6 +168,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetBooleanDetailsTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var details = await client.GetBooleanDetailsAsync("some_other_feature", true);
         Assert.AreEqual("some_other_feature", details.FlagKey);
         Assert.AreEqual(Reason.TargetingMatch, details.Reason);
@@ -143,6 +185,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetIntegerDetailsAsyncTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var details = await client.GetIntegerDetailsAsync("int_feature", 0);
         Assert.AreEqual("int_feature", details.FlagKey);
         Assert.AreEqual(Reason.TargetingMatch, details.Reason);
@@ -155,6 +202,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetStringDetailsAsyncTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var details = await client.GetStringDetailsAsync("some_other_feature", "blah");
         Assert.AreEqual("some_other_feature", details.FlagKey);
         Assert.AreEqual(Reason.TargetingMatch, details.Reason);
@@ -167,6 +219,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetDoubleDetailsAsyncTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var details = await client.GetDoubleDetailsAsync("int_feature", 0D);
         Assert.AreEqual("int_feature", details.FlagKey);
         Assert.AreEqual(Reason.TargetingMatch, details.Reason);
@@ -179,6 +236,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetObjectDetailsAsyncTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         var details = await client.GetObjectDetailsAsync("obj_feature", new Value());
         Assert.AreEqual("obj_feature", details.FlagKey);
         Assert.AreEqual(Reason.TargetingMatch, details.Reason);
@@ -192,6 +254,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetBooleanFailTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         // attempt to fetch an object treatment as a Boolean. Should result in the default
         var value = await client.GetBooleanValueAsync("obj_feature", false);
         Assert.IsFalse(value);
@@ -205,6 +272,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetIntegerFailTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         // attempt to fetch an object treatment as an integer. Should result in the default
         var value = await client.GetIntegerValueAsync("obj_feature", 10);
         Assert.AreEqual(10, value);
@@ -218,6 +290,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetDoubleFailTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         // attempt to fetch an object treatment as a double. Should result in the default
         var value = await client.GetDoubleValueAsync("obj_feature", 10D);
         Assert.AreEqual(10D, value);
@@ -231,6 +308,11 @@ public class ProviderTests
     [TestMethod]
     public async Task GetObjectFailTest()
     {
+        await Api.Instance.SetProviderAsync(new Provider(sdk));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
         // attempt to fetch an int as an object. Should result in the default
         Structure defaultValue = Structure.Builder().Set("key", new Value("value")).Build();
         var value = await client.GetObjectValueAsync("int_feature", new Value(defaultValue));
