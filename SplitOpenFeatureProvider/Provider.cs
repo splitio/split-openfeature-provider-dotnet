@@ -1,7 +1,6 @@
 using OpenFeature;
 using OpenFeature.Model;
 using OpenFeature.Constant;
-using OpenFeature.Error;
 using Splitio.Services.Client.Interfaces;
 using Newtonsoft.Json.Linq;
 
@@ -11,6 +10,7 @@ namespace Splitio.OpenFeature
     {
         private readonly Metadata _metadata = new("Split Client");
         private readonly ISplitClient _client;
+        private readonly String CONTROL = "control";
 
         public Provider(ISplitClient client)
         {
@@ -23,63 +23,111 @@ namespace Splitio.OpenFeature
             EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
-            var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
-            if (originalResult == "control")
+            if (key == null)
             {
-                return Task.FromResult(new ResolutionDetails<bool>(flagKey, defaultValue, variant: originalResult, errorType: ErrorType.FlagNotFound));
+                return Task.FromResult(KeyNotFound<bool>(flagKey, defaultValue));
             }
-            var evaluationResult = ParseBoolean(originalResult);
-            return Task.FromResult(new ResolutionDetails<bool>(flagKey, evaluationResult, errorType: ErrorType.None, variant: originalResult, reason: Reason.TargetingMatch));
+
+            var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
+            if (originalResult == CONTROL)
+            {
+                return Task.FromResult(FlagNotFound<bool>(flagKey, defaultValue));
+            }
+            try
+            {
+                var evaluationResult = ParseBoolean(originalResult);
+                return Task.FromResult(new ResolutionDetails<bool>(flagKey, evaluationResult, errorType: ErrorType.None, variant: originalResult, reason: Reason.TargetingMatch));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {originalResult} is not a bool");
+                return Task.FromResult(ParseError<bool>(flagKey, defaultValue));
+            }
         }
 
         public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue,
             EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
-            var evaluationResult = _client.GetTreatment(key, flagKey, TransformContext(context));
-            if (evaluationResult == "control")
+            if (key == null)
             {
-                return Task.FromResult(new ResolutionDetails<string>(flagKey, defaultValue, variant: evaluationResult, errorType: ErrorType.FlagNotFound));
+                return Task.FromResult(KeyNotFound<string>(flagKey, defaultValue));
             }
-            return Task.FromResult(new ResolutionDetails<string>(flagKey, evaluationResult ?? defaultValue, variant: evaluationResult, reason: Reason.TargetingMatch, errorType: ErrorType.None));
+
+            var evaluationResult = _client.GetTreatment(key, flagKey, TransformContext(context));
+            if (evaluationResult == CONTROL)
+            {
+                return Task.FromResult(FlagNotFound<string>(flagKey, defaultValue));
+            }
+            return Task.FromResult(new ResolutionDetails<string>(
+                flagKey, 
+                evaluationResult ?? defaultValue, 
+                variant: evaluationResult, 
+                reason: Reason.TargetingMatch, 
+                errorType: ErrorType.None));
         }
 
         public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue,
             EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
-            var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
-            if (originalResult == "control")
+            if (key == null)
             {
-                return Task.FromResult(new ResolutionDetails<int>(flagKey, defaultValue, variant: originalResult, errorType: ErrorType.FlagNotFound));
+                return Task.FromResult(KeyNotFound<int>(flagKey, defaultValue));
             }
+
+            var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
+            if (originalResult == CONTROL)
+            {
+                return Task.FromResult(FlagNotFound<int>(flagKey, defaultValue));
+            }
+
             try {
                 var evaluationResult = int.Parse(originalResult);
-                return Task.FromResult(new ResolutionDetails<int>(flagKey, evaluationResult, variant: originalResult, reason: Reason.TargetingMatch, errorType: ErrorType.None));
+                return Task.FromResult(new ResolutionDetails<int>(
+                    flagKey, 
+                    evaluationResult, 
+                    variant: originalResult, 
+                    reason: Reason.TargetingMatch, 
+                    errorType: ErrorType.None));
             }
             catch (FormatException)
             {
-                throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult} is not an int");
-            };
+                Console.WriteLine($"Exception: {originalResult} is not a int");
+                return Task.FromResult(ParseError<int>(flagKey, defaultValue));
+            }
+            ;
         }
 
         public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue,
             EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
-            var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
-            if (originalResult == "control")
+            if (key == null)
             {
-                return Task.FromResult(new ResolutionDetails<double>(flagKey, defaultValue, variant: originalResult, errorType: ErrorType.FlagNotFound));
+                return Task.FromResult(KeyNotFound<double>(flagKey, defaultValue));
             }
+
+            var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
+            if (originalResult == CONTROL)
+            {
+                return Task.FromResult(FlagNotFound<double>(flagKey, defaultValue));
+            }
+
             try
             {
                 var evaluationResult = double.Parse(originalResult);
-                return Task.FromResult(new ResolutionDetails<double>(flagKey, evaluationResult, variant: originalResult, reason: Reason.TargetingMatch, errorType: ErrorType.None));
+                return Task.FromResult(new ResolutionDetails<double>(
+                    flagKey, 
+                    evaluationResult,
+                    variant: originalResult,
+                    reason: Reason.TargetingMatch,
+                    errorType: ErrorType.None));
             }
             catch (FormatException)
             {
-                throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult} is not a double");
+                Console.WriteLine($"Exception: {originalResult} is not a double");
+                return Task.FromResult(ParseError<double>(flagKey, defaultValue));
             }
         }
 
@@ -87,28 +135,72 @@ namespace Splitio.OpenFeature
             EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
             var key = GetTargetingKey(context);
-            var originalResult = _client.GetTreatmentWithConfig(key, flagKey, TransformContext(context));
-            if (originalResult.Treatment == "control")
+            if (key == null)
             {
-                return Task.FromResult(new ResolutionDetails<Value>(flagKey, defaultValue, variant: originalResult.Treatment, errorType: ErrorType.FlagNotFound));
+                return Task.FromResult(KeyNotFound<Value>(flagKey, defaultValue));
             }
+
+            var originalResult = _client.GetTreatmentWithConfig(key, flagKey, TransformContext(context));
+            if (originalResult.Treatment == CONTROL)
+            {
+                return Task.FromResult(FlagNotFound<Value>(flagKey, defaultValue)); 
+            }
+
             try {
                 var jsonString = originalResult.Config;
                 var dict = JObject.Parse(jsonString).ToObject<Dictionary<string, string>>();
                 if (dict == null)
                 {
-                    throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult.Config} is not an object");
+                    Console.WriteLine($"Exception: {originalResult} is not a Json");
+                    return Task.FromResult(ParseError<Value>(flagKey, defaultValue));
                 }
+
                 var dict2 = dict.ToDictionary(x => x.Key, x => new Value(x.Value));
                 var dictValue = new Value(new Structure(dict2));
-                return Task.FromResult(new ResolutionDetails<Value>(flagKey, dictValue, variant: originalResult.Treatment, reason: Reason.TargetingMatch, errorType: ErrorType.None));
+                return Task.FromResult(new ResolutionDetails<Value>(
+                    flagKey, 
+                    dictValue, 
+                    variant: originalResult.Treatment, 
+                    reason: Reason.TargetingMatch, 
+                    errorType: ErrorType.None));
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Exception parsing JSON: {ex}");
                 Console.WriteLine($"Attempted to parse: {originalResult.Config}");
-                throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult.Config} is not an object");
+                Console.WriteLine($"Exception: {originalResult} is not a double");
+                return Task.FromResult(ParseError<Value>(flagKey, defaultValue));
             }
+        }
+
+        private ResolutionDetails<T> KeyNotFound<T>(string flagKey, T defaultValue)
+        {
+            return new ResolutionDetails<T>(
+                                flagKey,
+                                defaultValue,
+                                variant: CONTROL,
+                                reason: Reason.Error,
+                                errorType: ErrorType.TargetingKeyMissing);
+        }
+
+        private ResolutionDetails<T> ParseError<T>(string flagKey, T defaultValue)
+        {
+            return new ResolutionDetails<T>(
+                                flagKey,
+                                defaultValue,
+                                variant: CONTROL,
+                                reason: Reason.Error,
+                                errorType: ErrorType.ParseError);
+        }
+
+        private ResolutionDetails<T> FlagNotFound<T>(string flagKey, T defaultValue)
+        {
+            return new ResolutionDetails<T>(
+                                flagKey,
+                                defaultValue,
+                                variant: CONTROL,
+                                reason: Reason.Error,
+                                errorType: ErrorType.FlagNotFound);
         }
 
         private static string GetTargetingKey(EvaluationContext context)
@@ -117,7 +209,7 @@ namespace Splitio.OpenFeature
             if (!context.TryGetValue("targetingKey", out key))
             {
                 Console.WriteLine("Split provider: targeting key missing!");
-                throw new FeatureProviderException(ErrorType.TargetingKeyMissing, "Split provider requires a userkey");
+                return null;
             }
             return key.AsString;
         }
@@ -134,8 +226,7 @@ namespace Splitio.OpenFeature
             return boolStr.ToLower() switch
             {
                 "on" or "true" => true,
-                "off" or "false" => false,
-                _ => throw new FeatureProviderException(ErrorType.ParseError, $"{boolStr} is not a boolean"),
+                "off" or "false" => false
             };
         }       
     }
