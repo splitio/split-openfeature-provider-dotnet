@@ -8,13 +8,13 @@ using Splitio.Services.Client.Interfaces;
 namespace ProviderTests;
 
 [TestClass]
-public class ProviderTests
+public class ProviderInternalSplitClientTests
 {
     FeatureClient client;
     ISplitClient sdk;
     Dictionary<String, Object> initialContext = new Dictionary<String, Object>();
 
-    public ProviderTests()
+    public ProviderInternalSplitClientTests()
     {
         // Create the Split client
         var config = new ConfigurationOptions
@@ -22,18 +22,8 @@ public class ProviderTests
             LocalhostFilePath = "../../../split.yaml",
             Logger = new CustomLogger()
         };
-        var factory = new SplitFactory("localhost", config);
-        sdk = factory.Client();
-        try
-        {
-            sdk.BlockUntilReady(10000);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception initializing Split client! {ex}");
-            throw;
-        }
-        initialContext.Add("SplitClient", sdk);
+        initialContext.Add("ConfigOptions", config);
+        initialContext.Add("ApiKey", "localhost");
     }
 
     [TestMethod]
