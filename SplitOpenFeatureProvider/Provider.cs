@@ -89,18 +89,8 @@ namespace Splitio.OpenFeature
                 return Task.FromResult(KeyNotFound<T>(flagKey, defaultValue));
             }
 
-            var originalResult = "";
-            SplitResult structureResult = new SplitResult();
-
-            if (typeof(T) == typeof(Value))
-            {
-                structureResult = _client.GetTreatmentWithConfig(key, flagKey, TransformContext(context));
-                originalResult = structureResult.Treatment;
-            }
-            else
-            {
-                originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
-            }
+            SplitResult structureResult = _client.GetTreatmentWithConfig(key, flagKey, TransformContext(context));
+            var originalResult = structureResult.Treatment;
 
             if (originalResult == CONTROL)
             {
@@ -131,14 +121,23 @@ namespace Splitio.OpenFeature
 
                     return Task.FromResult(new ResolutionDetails<T>(
                         flagKey,
-                        (T) vv,
+                        (T)vv,
                         variant: structureResult.Treatment,
+                        flagMetadata: new ImmutableMetadata(
+                            new Dictionary<string, object>
+                            {
+                                { "config", structureResult.Config },
+                            }),
                         reason: Reason.TargetingMatch,
                         errorType: ErrorType.None));
                 }
 
                 T evaluationResult = Parse<T>(originalResult);
-                return Task.FromResult(new ResolutionDetails<T>(flagKey, evaluationResult, errorType: ErrorType.None, variant: originalResult, reason: Reason.TargetingMatch));
+                return Task.FromResult(new ResolutionDetails<T>(flagKey, 
+                    evaluationResult, 
+                    errorType: ErrorType.None, 
+                    variant: originalResult, 
+                    reason: Reason.TargetingMatch));
             }
             catch (Exception ex)
             {
