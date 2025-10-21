@@ -1,8 +1,8 @@
 ﻿using OpenFeature;
 using OpenFeature.Constant;
 using OpenFeature.Model;
-using Splitio.Services.Client.Classes;
 using Splitio.OpenFeature;
+using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
 
 namespace ProviderTests;
@@ -307,13 +307,37 @@ public class ProviderInternalSplitClientTests
 
         // attempt to fetch an int as an object. Should result in the default
         Structure defaultValue = Structure.Builder().Set("key", new Value("value")).Build();
-        var value = await client.GetObjectValueAsync("int_feature", new Value(defaultValue));
+        var value = await client.GetObjectValueAsync("int_feature_2", new Value(defaultValue));
         Assert.IsTrue(StructuresMatch(defaultValue, value.AsStructure));
 
-        var details = await client.GetObjectDetailsAsync("int_feature", new Value(defaultValue));
+        var details = await client.GetObjectDetailsAsync("int_feature_2", new Value(defaultValue));
         Assert.IsTrue(StructuresMatch(defaultValue, details.Value.AsStructure));
         Assert.AreEqual(ErrorType.ParseError, details.ErrorType);
         Assert.AreEqual(Reason.Error, details.Reason);
+    }
+
+    [TestMethod]
+    public async Task SDKNotReadyTest()
+    {
+        var config2 = new ConfigurationOptions
+        {
+            FeaturesRefreshRate = 1000
+        };
+        Dictionary<String, Object> initialContext2 = new Dictionary<String, Object>();
+        initialContext2.Add("ConfigOptions", config2);
+        initialContext2.Add("ApiKey", "apikey");
+
+        await Api.Instance.SetProviderAsync(new Provider(initialContext2));
+        client = OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+        client.SetContext(context);
+
+        var result = await client.GetStringValueAsync("some_other_feature", "on");
+        Assert.AreEqual("on", result);
+        var details = await client.GetObjectDetailsAsync("some_other_feature", new Value("on"));
+        Assert.AreEqual(ErrorType.ProviderNotReady, details.ErrorType);
+        Assert.AreEqual(Reason.Error, details.Reason);
+        await OpenFeature.Api.Instance.GetProvider().ShutdownAsync();
     }
 
     private static bool StructuresMatch(Structure s1, Structure s2)

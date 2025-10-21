@@ -6,7 +6,11 @@
     config: "{\"desc\" : \"this applies only to ON treatment\"}"
 - some_other_feature:
     treatment: "off"
+    config: "{\"key\": \"value\"}"
 - int_feature:
+    treatment: "32"
+    config: "{\"key\": \"value\"}"
+- int_feature_2:
     treatment: "32"
 - obj_feature:
     treatment: "{\"key\": \"value\"}"

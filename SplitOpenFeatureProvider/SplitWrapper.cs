@@ -1,11 +1,5 @@
 ﻿using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
-using Splitio.Telemetry.Domain;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SplitOpenFeatureProvider
 {
@@ -13,6 +7,11 @@ namespace SplitOpenFeatureProvider
     {
         ISplitClient splitClient;
         bool SDKReady = false;
+
+        public SplitWrapper(ISplitClient splitClient)
+        {
+            this.splitClient = splitClient;
+        }
 
         public SplitWrapper(string ApiKey, ConfigurationOptions Configs) 
         {
