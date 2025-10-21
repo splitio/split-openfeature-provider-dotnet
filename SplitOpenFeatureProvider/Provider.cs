@@ -152,8 +152,13 @@ namespace Splitio.OpenFeature
 
                     return Task.FromResult(new ResolutionDetails<T>(
                         flagKey,
-                        (T) vv,
+                        (T)vv,
                         variant: structureResult.Treatment,
+                        flagMetadata: new ImmutableMetadata(
+                            new Dictionary<string, object>
+                            {
+                                { "config", structureResult.Config },
+                            }),
                         reason: Reason.TargetingMatch,
                         errorType: ErrorType.None));
                 }
