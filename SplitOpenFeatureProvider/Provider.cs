@@ -5,12 +5,14 @@ using OpenFeature.Model;
 using Splitio.Domain;
 using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
+using Splitio.Services.Logger;
+using Splitio.Services.Shared.Classes;
 using SplitOpenFeatureProvider;
-using System.Threading.Tasks;
-using System.Threading;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Splitio.OpenFeature
 {
@@ -18,6 +20,7 @@ namespace Splitio.OpenFeature
     {
         private readonly Metadata _metadata = new Metadata(Constants.ProviderName);
         private readonly SplitWrapper _splitWrapper;
+        protected readonly ISplitLogger _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
 
         public Provider(Dictionary<string, object> initialContext)
         {
@@ -151,7 +154,7 @@ namespace Splitio.OpenFeature
                     var dict = JObject.Parse(jsonString).ToObject<Dictionary<string, string>>();
                     if (dict == null)
                     {
-                        Console.WriteLine($"Exception: {originalResult} is not a Json");
+                        _log.Warn($"Exception: {originalResult} is not a Json");
                         return Task.FromResult(ParseError<T>(flagKey, defaultValue));
                     }
 
@@ -187,7 +190,7 @@ namespace Splitio.OpenFeature
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception: {originalResult} is not a {typeof(T)}");
+                _log.Error($"Exception: {originalResult} is not a {typeof(T)}");
                 return Task.FromResult(ParseError<T>(flagKey, defaultValue));
             }
         }
@@ -205,12 +208,12 @@ namespace Splitio.OpenFeature
             return new SplitWrapper(apiKey, config);
 
         }
-        private static string GetTargetingKey(EvaluationContext context)
+        private string GetTargetingKey(EvaluationContext context)
         {
             Value key;
             if (!context.TryGetValue("targetingKey", out key))
             {
-                Console.WriteLine("Split provider: targeting key missing!");
+                _log.Error("Split provider: targeting key missing!");
                 return null;
             }
             return key.AsString;
@@ -259,17 +262,17 @@ namespace Splitio.OpenFeature
             throw new FormatException("Could not parse value");
         }       
 
-        private static void Validate(Dictionary<string, object> initialContext)
+        private void Validate(Dictionary<string, object> initialContext)
         {
             if (initialContext == null)
             {
-                Console.WriteLine("Exception: Missing SplitClient instance or SDK ApiKey");
+                _log.Error("Exception: Missing SplitClient instance or SDK ApiKey");
                 throw new ArgumentException("Missing SplitClient instance or SDK ApiKey");
             }
 
             if (!initialContext.ContainsKey(Constants.SplitClientKey) && !initialContext.ContainsKey(Constants.SdkApiKey))
             {
-                Console.WriteLine("Exception: Missing Split SDK ApiKey");
+                _log.Error("Exception: Missing Split SDK ApiKey");
                 throw new ArgumentException("Missing Split SDK ApiKey");
             }
         }
