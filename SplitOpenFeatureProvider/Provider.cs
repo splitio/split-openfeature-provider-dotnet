@@ -16,17 +16,16 @@ namespace Splitio.OpenFeature
 {
     public class Provider : FeatureProvider
     {
-        private readonly Metadata _metadata = new Metadata("Split Client");
-        private readonly string CONTROL = "control";
+        private readonly Metadata _metadata = new Metadata(Constants.ProviderName);
         private readonly SplitWrapper _splitWrapper;
 
         public Provider(Dictionary<string, object> initialContext)
         {
             Validate(initialContext);
 
-            if (initialContext.ContainsKey("SplitClient"))
+            if (initialContext.ContainsKey(Constants.SplitClientKey))
             {
-                initialContext.TryGetValue("SplitClient", out var client);
+                initialContext.TryGetValue(Constants.SplitClientKey, out var client);
                 _splitWrapper = new SplitWrapper((ISplitClient)client);
                 return;
             }
@@ -81,7 +80,7 @@ namespace Splitio.OpenFeature
             return new ResolutionDetails<T>(
                                 flagKey,
                                 defaultValue,
-                                variant: CONTROL,
+                                variant: Constants.CONTROL,
                                 reason: Reason.Error,
                                 errorType: ErrorType.TargetingKeyMissing);
         }
@@ -91,7 +90,7 @@ namespace Splitio.OpenFeature
             return new ResolutionDetails<T>(
                                 flagKey,
                                 defaultValue,
-                                variant: CONTROL,
+                                variant: Constants.CONTROL,
                                 reason: Reason.Error,
                                 errorType: ErrorType.ParseError);
         }
@@ -101,7 +100,7 @@ namespace Splitio.OpenFeature
             return new ResolutionDetails<T>(
                                 flagKey,
                                 defaultValue,
-                                variant: CONTROL,
+                                variant: Constants.CONTROL,
                                 reason: Reason.Error,
                                 errorType: ErrorType.FlagNotFound);
         }
@@ -111,7 +110,7 @@ namespace Splitio.OpenFeature
             return new ResolutionDetails<T>(
                                 flagKey,
                                 defaultValue,
-                                variant: CONTROL,
+                                variant: Constants.CONTROL,
                                 reason: Reason.Error,
                                 errorType: ErrorType.ProviderNotReady);
         }
@@ -133,7 +132,7 @@ namespace Splitio.OpenFeature
             SplitResult structureResult = _splitWrapper.getSplitClient().GetTreatmentWithConfig(key, flagKey, TransformContext(context));
             var originalResult = structureResult.Treatment;
 
-            if (originalResult == CONTROL)
+            if (originalResult == Constants.CONTROL)
             {
                 return Task.FromResult(FlagNotFound<T>(flagKey, defaultValue));
             }
@@ -195,11 +194,10 @@ namespace Splitio.OpenFeature
 
         private SplitWrapper CreateSplitWrapper(Dictionary<string, object> initialContext)
         {
-            string apiKey = "";
-            initialContext.TryGetValue("ApiKey", out var key);
-            apiKey = (string)key;
+            initialContext.TryGetValue(Constants.SdkApiKey, out var key);
+            string apiKey = (string)key;
             var config = new ConfigurationOptions();
-            initialContext.TryGetValue("ConfigOptions", out var configs);
+            initialContext.TryGetValue(Constants.ConfigKey, out var configs);
             if (configs != null)
             {
                 config = (ConfigurationOptions)configs;
@@ -269,7 +267,7 @@ namespace Splitio.OpenFeature
                 throw new ArgumentException("Missing SplitClient instance or SDK ApiKey");
             }
 
-            if (!initialContext.ContainsKey("SplitClient") && !initialContext.ContainsKey("ApiKey"))
+            if (!initialContext.ContainsKey(Constants.SplitClientKey) && !initialContext.ContainsKey(Constants.SdkApiKey))
             {
                 Console.WriteLine("Exception: Missing Split SDK ApiKey");
                 throw new ArgumentException("Missing Split SDK ApiKey");
