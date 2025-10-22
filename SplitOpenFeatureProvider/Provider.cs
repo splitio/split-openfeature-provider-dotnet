@@ -6,16 +6,21 @@ using Splitio.Domain;
 using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
 using SplitOpenFeatureProvider;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Collections.Generic;
+using System.Linq;
+using System;
 
 namespace Splitio.OpenFeature
 {
     public class Provider : FeatureProvider
     {
-        private readonly Metadata _metadata = new("Split Client");
-        private readonly String CONTROL = "control";
+        private readonly Metadata _metadata = new Metadata("Split Client");
+        private readonly string CONTROL = "control";
         private readonly SplitWrapper _splitWrapper;
 
-        public Provider(Dictionary<String, Object> initialContext)
+        public Provider(Dictionary<string, object> initialContext)
         {
             Validate(initialContext);
 
@@ -29,6 +34,11 @@ namespace Splitio.OpenFeature
             _splitWrapper = CreateSplitWrapper(initialContext);
         }
 
+        public override System.Collections.Immutable.IImmutableList<Hook> GetProviderHooks()
+        {
+            return base.GetProviderHooks();
+        }
+
         public override Metadata GetMetadata() => _metadata;
 
         public void Dispose()
@@ -37,31 +47,31 @@ namespace Splitio.OpenFeature
         }
 
         public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<bool>(flagKey, defaultValue, context, cancellationToken);  
         }
 
         public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<string>(flagKey, defaultValue, context, cancellationToken);
         }
 
         public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<int>(flagKey, defaultValue, context, cancellationToken);
         }
 
         public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<double>(flagKey, defaultValue, context, cancellationToken);
         }
 
         public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<Value>(flagKey, defaultValue, context, cancellationToken);
         }
@@ -107,7 +117,7 @@ namespace Splitio.OpenFeature
         }
 
         private Task<ResolutionDetails<T>> Evaluate<T>(string flagKey, T defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             if (!_splitWrapper.IsSDKReady())
             {
@@ -183,7 +193,7 @@ namespace Splitio.OpenFeature
             }
         }
 
-        private SplitWrapper CreateSplitWrapper(Dictionary<String, Object> initialContext)
+        private SplitWrapper CreateSplitWrapper(Dictionary<string, object> initialContext)
         {
             string apiKey = "";
             initialContext.TryGetValue("ApiKey", out var key);
@@ -220,13 +230,15 @@ namespace Splitio.OpenFeature
             var type = typeof(T);
             if (type == typeof(bool))
             {
-                var returnedVal = strValue.ToLower() switch
+                if (strValue.ToLower() == "true" || strValue.ToLower() == "on") {
+                    object vv = true;
+                    return (T)vv;
+                }
+                if (strValue.ToLower() == "false" || strValue.ToLower() == "off")
                 {
-                    "on" or "true" => true,
-                    "off" or "false" => false
-                };
-                object vv = returnedVal;
-                return (T)vv;
+                    object vv = false;
+                    return (T)vv;
+                }
             }
             else if (type == typeof(string))
             {
