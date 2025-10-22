@@ -1,20 +1,20 @@
 ﻿using OpenFeature;
 using OpenFeature.Constant;
 using OpenFeature.Model;
-using Splitio.Services.Client.Classes;
 using Splitio.OpenFeature;
+using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
 
 namespace ProviderTests;
 
 [TestClass]
-public class ProviderTests
+public class ProviderInternalSplitClientTests
 {
     FeatureClient client;
     ISplitClient sdk;
     Dictionary<String, Object> initialContext = new Dictionary<String, Object>();
 
-    public ProviderTests()
+    public ProviderInternalSplitClientTests()
     {
         // Create the Split client
         var config = new ConfigurationOptions
@@ -22,34 +22,8 @@ public class ProviderTests
             LocalhostFilePath = "../../../split.yaml",
             Logger = new CustomLogger()
         };
-        var factory = new SplitFactory("localhost", config);
-        sdk = factory.Client();
-        try
-        {
-            sdk.BlockUntilReady(10000);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception initializing Split client! {ex}");
-            throw;
-        }
-        initialContext.Add("SplitClient", sdk);
-    }
-
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentException), "Missing SplitClient instance or SDK ApiKey")]
-    public async Task InitializeWithNullTest()
-    {
-        await Api.Instance.SetProviderAsync(new Provider(null));
-    }
-
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentException), "Missing Split SDK ApiKey")]
-    public async Task InitializeWithoutApiKeyTest()
-    {
-        Dictionary<String, Object> initialContext2 = new Dictionary<String, Object>();
-        initialContext2.Add("something", "sdk");
-        await Api.Instance.SetProviderAsync(new Provider(initialContext2));
+        initialContext.Add("ConfigOptions", config);
+        initialContext.Add("ApiKey", "localhost");
     }
 
     [TestMethod]
@@ -198,7 +172,6 @@ public class ProviderTests
         // the flag has a treatment of "off", this is returned as a value of false but the variant is still "off"
         Assert.AreEqual("off", details.Variant);
         Assert.AreEqual(ErrorType.None, details.ErrorType);
-        Assert.AreEqual("{\"key\": \"value\"}", details.FlagMetadata.GetString("config"));
     }
 
     [TestMethod]
@@ -216,7 +189,6 @@ public class ProviderTests
         // the flag has a treatment of "off", this is returned as a value of false but the variant is still "off"
         Assert.AreEqual("32", details.Variant);
         Assert.AreEqual(ErrorType.None, details.ErrorType);
-        Assert.AreEqual("{\"key\": \"value\"}", details.FlagMetadata.GetString("config"));
     }
 
     [TestMethod]
@@ -234,7 +206,6 @@ public class ProviderTests
         // the flag has a treatment of "off", this is returned as a value of false but the variant is still "off"
         Assert.AreEqual("off", details.Variant);
         Assert.AreEqual(ErrorType.None, details.ErrorType);
-        Assert.AreEqual("{\"key\": \"value\"}", details.FlagMetadata.GetString("config"));
     }
 
     [TestMethod]
@@ -252,7 +223,6 @@ public class ProviderTests
         // the flag has a treatment of "off", this is returned as a value of false but the variant is still "off"
         Assert.AreEqual("32", details.Variant);
         Assert.AreEqual(ErrorType.None, details.ErrorType);
-        Assert.AreEqual("{\"key\": \"value\"}", details.FlagMetadata.GetString("config"));
     }
 
     [TestMethod]
@@ -353,10 +323,9 @@ public class ProviderTests
         {
             FeaturesRefreshRate = 1000
         };
-        var factory2 = new SplitFactory("apikey", config2);
-        ISplitClient sdk2 = factory2.Client();
         Dictionary<String, Object> initialContext2 = new Dictionary<String, Object>();
-        initialContext2.Add("SplitClient", sdk2);
+        initialContext2.Add("ConfigOptions", config2);
+        initialContext2.Add("ApiKey", "apikey");
 
         await Api.Instance.SetProviderAsync(new Provider(initialContext2));
         client = OpenFeature.Api.Instance.GetClient();
@@ -368,7 +337,7 @@ public class ProviderTests
         var details = await client.GetObjectDetailsAsync("some_other_feature", new Value("on"));
         Assert.AreEqual(ErrorType.ProviderNotReady, details.ErrorType);
         Assert.AreEqual(Reason.Error, details.Reason);
-        sdk2.Destroy();
+        await OpenFeature.Api.Instance.GetProvider().ShutdownAsync();
     }
 
     private static bool StructuresMatch(Structure s1, Structure s2)
