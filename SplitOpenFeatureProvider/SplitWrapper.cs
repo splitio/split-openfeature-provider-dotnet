@@ -1,5 +1,6 @@
 ﻿using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
+using System;
 
 namespace SplitOpenFeatureProvider
 {

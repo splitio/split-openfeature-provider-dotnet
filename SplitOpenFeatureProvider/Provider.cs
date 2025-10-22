@@ -5,28 +5,40 @@ using OpenFeature.Model;
 using Splitio.Domain;
 using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
+using Splitio.Services.Logger;
+using Splitio.Services.Shared.Classes;
 using SplitOpenFeatureProvider;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Splitio.OpenFeature
 {
     public class Provider : FeatureProvider
     {
-        private readonly Metadata _metadata = new("Split Client");
-        private readonly String CONTROL = "control";
+        private readonly Metadata _metadata = new Metadata(Constants.ProviderName);
         private readonly SplitWrapper _splitWrapper;
+        protected readonly ISplitLogger _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
 
-        public Provider(Dictionary<String, Object> initialContext)
+        public Provider(Dictionary<string, object> initialContext)
         {
             Validate(initialContext);
 
-            if (initialContext.ContainsKey("SplitClient"))
+            if (initialContext.ContainsKey(Constants.SplitClientKey))
             {
-                initialContext.TryGetValue("SplitClient", out var client);
+                initialContext.TryGetValue(Constants.SplitClientKey, out var client);
                 _splitWrapper = new SplitWrapper((ISplitClient)client);
                 return;
             }
 
             _splitWrapper = CreateSplitWrapper(initialContext);
+        }
+
+        public override System.Collections.Immutable.IImmutableList<Hook> GetProviderHooks()
+        {
+            return base.GetProviderHooks();
         }
 
         public override Metadata GetMetadata() => _metadata;
@@ -37,31 +49,31 @@ namespace Splitio.OpenFeature
         }
 
         public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<bool>(flagKey, defaultValue, context, cancellationToken);  
         }
 
         public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<string>(flagKey, defaultValue, context, cancellationToken);
         }
 
         public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<int>(flagKey, defaultValue, context, cancellationToken);
         }
 
         public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<double>(flagKey, defaultValue, context, cancellationToken);
         }
 
         public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<Value>(flagKey, defaultValue, context, cancellationToken);
         }
@@ -71,7 +83,7 @@ namespace Splitio.OpenFeature
             return new ResolutionDetails<T>(
                                 flagKey,
                                 defaultValue,
-                                variant: CONTROL,
+                                variant: Constants.CONTROL,
                                 reason: Reason.Error,
                                 errorType: ErrorType.TargetingKeyMissing);
         }
@@ -81,7 +93,7 @@ namespace Splitio.OpenFeature
             return new ResolutionDetails<T>(
                                 flagKey,
                                 defaultValue,
-                                variant: CONTROL,
+                                variant: Constants.CONTROL,
                                 reason: Reason.Error,
                                 errorType: ErrorType.ParseError);
         }
@@ -91,7 +103,7 @@ namespace Splitio.OpenFeature
             return new ResolutionDetails<T>(
                                 flagKey,
                                 defaultValue,
-                                variant: CONTROL,
+                                variant: Constants.CONTROL,
                                 reason: Reason.Error,
                                 errorType: ErrorType.FlagNotFound);
         }
@@ -101,13 +113,13 @@ namespace Splitio.OpenFeature
             return new ResolutionDetails<T>(
                                 flagKey,
                                 defaultValue,
-                                variant: CONTROL,
+                                variant: Constants.CONTROL,
                                 reason: Reason.Error,
                                 errorType: ErrorType.ProviderNotReady);
         }
 
         private Task<ResolutionDetails<T>> Evaluate<T>(string flagKey, T defaultValue,
-            EvaluationContext? context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             if (!_splitWrapper.IsSDKReady())
             {
@@ -123,7 +135,7 @@ namespace Splitio.OpenFeature
             SplitResult structureResult = _splitWrapper.getSplitClient().GetTreatmentWithConfig(key, flagKey, TransformContext(context));
             var originalResult = structureResult.Treatment;
 
-            if (originalResult == CONTROL)
+            if (originalResult == Constants.CONTROL)
             {
                 return Task.FromResult(FlagNotFound<T>(flagKey, defaultValue));
             }
@@ -142,7 +154,7 @@ namespace Splitio.OpenFeature
                     var dict = JObject.Parse(jsonString).ToObject<Dictionary<string, string>>();
                     if (dict == null)
                     {
-                        Console.WriteLine($"Exception: {originalResult} is not a Json");
+                        _log.Warn($"Exception: {originalResult} is not a Json");
                         return Task.FromResult(ParseError<T>(flagKey, defaultValue));
                     }
 
@@ -178,18 +190,17 @@ namespace Splitio.OpenFeature
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception: {originalResult} is not a {typeof(T)}");
+                _log.Error($"Exception: {originalResult} is not a {typeof(T)}");
                 return Task.FromResult(ParseError<T>(flagKey, defaultValue));
             }
         }
 
-        private SplitWrapper CreateSplitWrapper(Dictionary<String, Object> initialContext)
+        private SplitWrapper CreateSplitWrapper(Dictionary<string, object> initialContext)
         {
-            string apiKey = "";
-            initialContext.TryGetValue("ApiKey", out var key);
-            apiKey = (string)key;
+            initialContext.TryGetValue(Constants.SdkApiKey, out var key);
+            string apiKey = (string)key;
             var config = new ConfigurationOptions();
-            initialContext.TryGetValue("ConfigOptions", out var configs);
+            initialContext.TryGetValue(Constants.ConfigKey, out var configs);
             if (configs != null)
             {
                 config = (ConfigurationOptions)configs;
@@ -197,12 +208,12 @@ namespace Splitio.OpenFeature
             return new SplitWrapper(apiKey, config);
 
         }
-        private static string GetTargetingKey(EvaluationContext context)
+        private string GetTargetingKey(EvaluationContext context)
         {
             Value key;
             if (!context.TryGetValue("targetingKey", out key))
             {
-                Console.WriteLine("Split provider: targeting key missing!");
+                _log.Error("Split provider: targeting key missing!");
                 return null;
             }
             return key.AsString;
@@ -220,13 +231,15 @@ namespace Splitio.OpenFeature
             var type = typeof(T);
             if (type == typeof(bool))
             {
-                var returnedVal = strValue.ToLower() switch
+                if (strValue.ToLower() == "true" || strValue.ToLower() == "on") {
+                    object vv = true;
+                    return (T)vv;
+                }
+                if (strValue.ToLower() == "false" || strValue.ToLower() == "off")
                 {
-                    "on" or "true" => true,
-                    "off" or "false" => false
-                };
-                object vv = returnedVal;
-                return (T)vv;
+                    object vv = false;
+                    return (T)vv;
+                }
             }
             else if (type == typeof(string))
             {
@@ -249,17 +262,17 @@ namespace Splitio.OpenFeature
             throw new FormatException("Could not parse value");
         }       
 
-        private static void Validate(Dictionary<string, object> initialContext)
+        private void Validate(Dictionary<string, object> initialContext)
         {
             if (initialContext == null)
             {
-                Console.WriteLine("Exception: Missing SplitClient instance or SDK ApiKey");
+                _log.Error("Exception: Missing SplitClient instance or SDK ApiKey");
                 throw new ArgumentException("Missing SplitClient instance or SDK ApiKey");
             }
 
-            if (!initialContext.ContainsKey("SplitClient") && !initialContext.ContainsKey("ApiKey"))
+            if (!initialContext.ContainsKey(Constants.SplitClientKey) && !initialContext.ContainsKey(Constants.SdkApiKey))
             {
-                Console.WriteLine("Exception: Missing Split SDK ApiKey");
+                _log.Error("Exception: Missing Split SDK ApiKey");
                 throw new ArgumentException("Missing Split SDK ApiKey");
             }
         }
