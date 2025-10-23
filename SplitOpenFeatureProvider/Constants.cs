@@ -7,5 +7,7 @@
         public const string SplitClientKey = "SplitClient";
         public const string SdkApiKey = "ApiKey";
         public const string ConfigKey = "ConfigOptions";
+        public const string TrafficType = "trafficType";
+       
     }
 }

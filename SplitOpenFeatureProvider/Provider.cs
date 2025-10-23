@@ -97,7 +97,7 @@ namespace Splitio.OpenFeature
 
             _splitWrapper.getSplitClient().Track(
                 key,
-                evaluationContext.GetValue("trafficType").AsString,
+                evaluationContext.GetValue(Constants.TrafficType).AsString,
                 trackingEventName,
                 value,
                 attributes);
@@ -321,8 +321,8 @@ namespace Splitio.OpenFeature
                 return false;
             }
 
-            if (!evaluationContext.ContainsKey("trafficType") || 
-                String.IsNullOrEmpty(evaluationContext.GetValue("trafficType").AsString))
+            if (!evaluationContext.ContainsKey(Constants.TrafficType) || 
+                String.IsNullOrEmpty(evaluationContext.GetValue(Constants.TrafficType).AsString))
             {
                 _log.Error("Track: trafficType is invalid or mising.");
                 return false;
