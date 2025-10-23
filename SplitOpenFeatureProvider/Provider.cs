@@ -19,7 +19,7 @@ namespace Splitio.OpenFeature
     public class Provider : FeatureProvider
     {
         private readonly Metadata _metadata = new Metadata(Constants.ProviderName);
-        private readonly SplitWrapper _splitWrapper;
+        private SplitWrapper _splitWrapper;
         protected readonly ISplitLogger _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
 
         public Provider(Dictionary<string, object> initialContext)
@@ -80,7 +80,7 @@ namespace Splitio.OpenFeature
 
         public override void Track(string trackingEventName, EvaluationContext evaluationContext = null, TrackingEventDetails trackingEventDetails = null)
         {
-            if (ValidateTrackDetails(trackingEventName, evaluationContext))
+            if (!ValidateTrackDetails(trackingEventName, evaluationContext))
             {
                 _log.Error("Track call is ignored");
                 return;
@@ -92,13 +92,13 @@ namespace Splitio.OpenFeature
             if (trackingEventDetails != null)
             {
                 value = (double)trackingEventDetails.Value;
-                attributes = (Dictionary<string, object>)trackingEventDetails.AsDictionary();
+                attributes = trackingEventDetails.AsDictionary().ToDictionary(x => x.Key, x => x.Value.AsObject);
             }
 
             _splitWrapper.getSplitClient().Track(
                 key,
                 evaluationContext.GetValue("trafficType").AsString,
-                evaluationContext.GetValue("eventType").AsString,
+                trackingEventName,
                 value,
                 attributes);
         }
