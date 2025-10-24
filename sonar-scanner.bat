@@ -6,8 +6,8 @@ GOTO :main
 
 :sonar_scanner
 SonarScanner.MSBuild.exe begin ^
-  /n:"dotnet-client" ^
-  /k:"dotnet-client" ^
+  /n:"split-openfeature-provider-dotnet" ^
+  /k:"split-openfeature-provider-dotnet" ^
   /v:"%APPVEYOR_BUILD_VERSION%" ^
   /d:sonar.host.url="https://sonarqube.split-internal.com" ^
   /d:sonar.login="%SONAR_LOGIN%" ^
