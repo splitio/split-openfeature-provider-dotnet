@@ -19,12 +19,12 @@ namespace Splitio.OpenFeature
     public class Provider : FeatureProvider
     {
         private readonly Metadata _metadata = new Metadata(Constants.ProviderName);
-        private readonly SplitWrapper _splitWrapper;
+        private SplitWrapper _splitWrapper;
         protected readonly ISplitLogger _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
 
         public Provider(Dictionary<string, object> initialContext)
         {
-            Validate(initialContext);
+            ValidateInitialContext(initialContext);
 
             if (initialContext.ContainsKey(Constants.SplitClientKey))
             {
@@ -76,6 +76,31 @@ namespace Splitio.OpenFeature
             EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
             return Evaluate<Value>(flagKey, defaultValue, context, cancellationToken);
+        }
+
+        public override void Track(string trackingEventName, EvaluationContext evaluationContext = null, TrackingEventDetails trackingEventDetails = null)
+        {
+            if (!ValidateTrackDetails(trackingEventName, evaluationContext))
+            {
+                _log.Error("Track call is ignored");
+                return;
+            }
+
+            var key = GetTargetingKey(evaluationContext);
+            double value = 0;
+            Dictionary<string, object> attributes = new Dictionary<string, object>();
+            if (trackingEventDetails != null)
+            {
+                value = (double)trackingEventDetails.Value;
+                attributes = trackingEventDetails.AsDictionary().ToDictionary(x => x.Key, x => x.Value.AsObject);
+            }
+
+            _splitWrapper.getSplitClient().Track(
+                key,
+                evaluationContext.GetValue(Constants.TrafficType).AsString,
+                trackingEventName,
+                value,
+                attributes);
         }
 
         private ResolutionDetails<T> KeyNotFound<T>(string flagKey, T defaultValue)
@@ -262,7 +287,7 @@ namespace Splitio.OpenFeature
             throw new FormatException("Could not parse value");
         }       
 
-        private void Validate(Dictionary<string, object> initialContext)
+        private void ValidateInitialContext(Dictionary<string, object> initialContext)
         {
             if (initialContext == null)
             {
@@ -275,6 +300,35 @@ namespace Splitio.OpenFeature
                 _log.Error("Exception: Missing Split SDK ApiKey");
                 throw new ArgumentException("Missing Split SDK ApiKey");
             }
+        }
+
+        private bool ValidateTrackDetails(string trackingEventName, EvaluationContext evaluationContext)
+        {
+            if (evaluationContext == null)
+            {
+                _log.Error("Track: Key, trafficType and eventType are required.");
+                return false;
+            }
+
+            if (String.IsNullOrEmpty(trackingEventName)) {
+                _log.Error("Track: eventName should be non-empty string.");
+                return false;
+            }
+
+            if (String.IsNullOrEmpty(GetTargetingKey(evaluationContext)))
+            {
+                _log.Error("Track: Key is insvalid or mising.");
+                return false;
+            }
+
+            if (!evaluationContext.ContainsKey(Constants.TrafficType) || 
+                String.IsNullOrEmpty(evaluationContext.GetValue(Constants.TrafficType).AsString))
+            {
+                _log.Error("Track: trafficType is invalid or mising.");
+                return false;
+            }
+
+            return true;
         }
     }
 }

@@ -4,7 +4,7 @@ using System;
 
 namespace SplitOpenFeatureProvider
 {
-    internal class SplitWrapper
+    public class SplitWrapper
     {
         ISplitClient splitClient;
         bool SDKReady = false;

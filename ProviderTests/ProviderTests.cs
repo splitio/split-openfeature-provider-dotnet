@@ -1,14 +1,15 @@
-﻿using OpenFeature;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using OpenFeature;
 using OpenFeature.Constant;
 using OpenFeature.Model;
-using Splitio.Services.Client.Classes;
 using Splitio.OpenFeature;
+using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace ProviderTests
 {
@@ -375,6 +376,112 @@ namespace ProviderTests
             Assert.AreEqual(ErrorType.ProviderNotReady, details.ErrorType);
             Assert.AreEqual(Reason.Error, details.Reason);
             sdk2.Destroy();
+        }
+
+        [TestMethod]
+        public async Task TestTrack()
+        {
+            Mock<ISplitClient> splitClient = new Mock<ISplitClient>();
+            Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
+            initialContext2.Add("SplitClient", splitClient);
+            Provider splitProvider = new Provider(initialContext); 
+            await Api.Instance.SetProviderAsync(splitProvider);
+
+            Type type = typeof(Provider);
+            FieldInfo privatePropertyInfo = type.GetField("_splitWrapper", BindingFlags.Instance | BindingFlags.NonPublic);
+            SplitOpenFeatureProvider.SplitWrapper splitwrapper = (SplitOpenFeatureProvider.SplitWrapper)privatePropertyInfo.GetValue(splitProvider);
+
+            type = typeof(SplitOpenFeatureProvider.SplitWrapper);
+            FieldInfo splitClientProp = type.GetField("splitClient", BindingFlags.Instance | BindingFlags.NonPublic);
+            splitClientProp.SetValue(splitwrapper, splitClient.Object);
+
+            client = OpenFeature.Api.Instance.GetClient();
+            var context = EvaluationContext.Builder()
+                .Set("targetingKey", "key")
+                .Set("trafficType", "user")
+                .Build();
+            var eventDetails = TrackingEventDetails.Builder()
+                .SetValue(10)
+                .Set("prop", "val")
+                .Build();
+            client.SetContext(context);
+
+            client.Track("event", context, eventDetails);
+            Assert.AreEqual(1, splitClient.Invocations.Count);
+            foreach (var item in splitClient.Invocations)
+            {
+                int count = 0;
+                Assert.AreEqual(5, item.Arguments.Count);
+                foreach (var arg in item.Arguments)
+                {
+                    switch (count)
+                    {
+                        case 0: Assert.AreEqual("key", arg.ToString()); break;
+                        case 1: Assert.AreEqual("user", arg.ToString()); break;
+                        case 2: Assert.AreEqual("event", arg.ToString()); break;
+                        case 3: Assert.AreEqual((double)10, arg); break;
+                        case 4:
+                            {
+                                Dictionary<string, object> temp = (Dictionary<string, object>)arg;
+                                Assert.IsTrue(temp.ContainsValue("val"));
+                                Assert.IsTrue(temp.ContainsKey("prop"));
+                                break;
+                            }
+                        }
+                    count++;
+                }
+            }
+        }
+
+        [TestMethod]
+        public async Task TestTrackWithInvalidArguments()
+        {
+            Mock<ISplitClient> splitClient = new Mock<ISplitClient>();
+            Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
+            initialContext2.Add("SplitClient", splitClient);
+            Provider splitProvider = new Provider(initialContext);
+            await Api.Instance.SetProviderAsync(splitProvider);
+
+            Type type = typeof(Provider);
+            FieldInfo privatePropertyInfo = type.GetField("_splitWrapper", BindingFlags.Instance | BindingFlags.NonPublic);
+            SplitOpenFeatureProvider.SplitWrapper splitwrapper = (SplitOpenFeatureProvider.SplitWrapper)privatePropertyInfo.GetValue(splitProvider);
+
+            type = typeof(SplitOpenFeatureProvider.SplitWrapper);
+            FieldInfo splitClientProp = type.GetField("splitClient", BindingFlags.Instance | BindingFlags.NonPublic);
+            splitClientProp.SetValue(splitwrapper, splitClient.Object);
+
+            client = OpenFeature.Api.Instance.GetClient();
+            var context = EvaluationContext.Builder()
+                .Set("trafficType", "user")
+                .Build();
+            client.SetContext(context);
+            client.Track("event");
+            Assert.AreEqual(0, splitClient.Invocations.Count);
+
+            context = EvaluationContext.Builder()
+                .Set("targetingKey", "key")
+                .Build();
+            client.SetContext(context);
+            client.Track("event");
+            Assert.AreEqual(0, splitClient.Invocations.Count);
+
+            context = EvaluationContext.Builder()
+                .Build();
+            client.SetContext(context);
+            client.Track("event");
+            Assert.AreEqual(0, splitClient.Invocations.Count);
+
+            context = EvaluationContext.Builder()
+                .Set("targetingKey", "key")
+                .Set("trafficType", "user")
+                .Build();
+            client.SetContext(context);
+            try
+            {
+                client.Track("");
+            }
+            catch (Exception ex) { }
+            Assert.AreEqual(0, splitClient.Invocations.Count);
         }
 
         private static bool StructuresMatch(Structure s1, Structure s2)
