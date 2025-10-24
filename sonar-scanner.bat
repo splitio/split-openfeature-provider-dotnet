@@ -14,8 +14,8 @@ SonarScanner.MSBuild.exe begin ^
   /d:sonar.ws.timeout="300" ^
   /d:sonar.cs.opencover.reportsPaths="**\TestResults\*\*.xml" ^
   /d:sonar.coverage.exclusions="**-tests.cs" ^
-  /d:sonar.links.ci="https://ci.appveyor.com/project/SplitDevOps/dotnet-client" ^
-  /d:sonar.links.scm="https://github.com/splitio/dotnet-client" ^
+  /d:sonar.links.ci="https://ci.appveyor.com/project/SplitDevOps/split-openfeature-provider-dotnet" ^
+  /d:sonar.links.scm="https://github.com/splitio/split-openfeature-provider-dotnet" ^
   %*
 EXIT /B 0
 
@@ -24,7 +24,7 @@ IF NOT "%APPVEYOR_PULL_REQUEST_NUMBER%"=="" (
   echo Pull Request number %APPVEYOR_PULL_REQUEST_NUMBER%
   CALL :sonar_scanner ^
     "/d:sonar.pullrequest.provider="GitHub"" ^
-    "/d:sonar.pullrequest.github.repository="splitio/dotnet-client"" ^
+    "/d:sonar.pullrequest.github.repository="splitio/split-openfeature-provider-dotnet"" ^
     "/d:sonar.pullrequest.key="%APPVEYOR_PULL_REQUEST_NUMBER%"" ^
     "/d:sonar.pullrequest.branch="%APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%"" ^
     "/d:sonar.pullrequest.base="%APPVEYOR_REPO_BRANCH%""
@@ -34,12 +34,12 @@ IF NOT "%APPVEYOR_PULL_REQUEST_NUMBER%"=="" (
       CALL :sonar_scanner ^
         "/d:sonar.branch.name="%APPVEYOR_REPO_BRANCH%""
     ) ELSE (
-        IF "%APPVEYOR_REPO_BRANCH%"=="development" (
+        IF "%APPVEYOR_REPO_BRANCH%"=="dev" (
           echo "Development branch."
           SET "TARGET_BRANCH=main"
           ) ELSE (
               echo "Feature branch."
-              SET "TARGET_BRANCH=development"
+              SET "TARGET_BRANCH=dev"
             )
       echo Branch Name is %APPVEYOR_REPO_BRANCH%
       echo Target Branch is !TARGET_BRANCH!

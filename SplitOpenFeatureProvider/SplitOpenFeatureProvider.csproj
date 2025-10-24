@@ -4,6 +4,7 @@
     <TargetFrameworks>net8.0;net9.0;netstandard2.0;net462</TargetFrameworks>
     <RootNamespace>Splitio.OpenFeature</RootNamespace>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>2.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="OpenFeature" />
