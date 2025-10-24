@@ -1,15 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0;netstandard2.0;net462</TargetFrameworks>
     <RootNamespace>Splitio.OpenFeature</RootNamespace>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-
   <ItemGroup>
     <None Remove="OpenFeature" />
     <None Remove="Splitio" />
     <None Remove="Microsoft.TestPlatform" />
+    <None Include="README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="OpenFeature" Version="2.9.0" />
