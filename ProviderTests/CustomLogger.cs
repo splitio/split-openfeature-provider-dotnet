@@ -19,7 +19,7 @@ namespace ProviderTests
         }
 
         public void Error(string message) {
-            Console.WriteLine($"DEBUG: {message}");
+            Console.WriteLine($"ERROR: {message}");
         }
 
         public void Info(string message, Exception exception) {

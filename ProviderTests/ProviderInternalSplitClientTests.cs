@@ -56,6 +56,7 @@ namespace ProviderTests
             Structure defaultStructure = Structure.Builder().Set("foo", new Value("bar")).Build();
             Value resultStructure = await client.GetObjectValueAsync(flagName, new Value(defaultStructure));
             Assert.IsTrue(StructuresMatch(defaultStructure, resultStructure.AsStructure));
+            await Api.Instance.ShutdownAsync();
         }
 
         [TestMethod]
@@ -318,6 +319,28 @@ namespace ProviderTests
             Assert.IsTrue(StructuresMatch(defaultValue, details.Value.AsStructure));
             Assert.AreEqual(ErrorType.ParseError, details.ErrorType);
             Assert.AreEqual(Reason.Error, details.Reason);
+        }
+
+        [TestMethod]
+        public async Task PassSDKReadyTimeTest()
+        {
+            var config2 = new ConfigurationOptions
+            {
+                LocalhostFilePath = "../../../split.yaml",
+                Logger = new CustomLogger()
+            };
+            Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
+            initialContext2.Add("ConfigOptions", config2);
+            initialContext2.Add("ApiKey", "localhost");
+            initialContext2.Add("ReadyBlockTime", 1000);
+
+            await Api.Instance.SetProviderAsync(new Provider(initialContext2));
+            client = OpenFeature.Api.Instance.GetClient();
+            var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+            client.SetContext(context);
+
+            var result = await client.GetStringValueAsync("some_other_feature", "on");
+            Assert.AreEqual("off", result);
         }
 
         [TestMethod]

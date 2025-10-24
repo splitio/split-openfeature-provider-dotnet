@@ -20,7 +20,7 @@ namespace Splitio.OpenFeature
     {
         private readonly Metadata _metadata = new Metadata(Constants.ProviderName);
         private SplitWrapper _splitWrapper;
-        protected readonly ISplitLogger _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
+        protected readonly ISplitLogger _log;
 
         public Provider(Dictionary<string, object> initialContext)
         {
@@ -30,10 +30,12 @@ namespace Splitio.OpenFeature
             {
                 initialContext.TryGetValue(Constants.SplitClientKey, out var client);
                 _splitWrapper = new SplitWrapper((ISplitClient)client);
+                _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
                 return;
             }
 
             _splitWrapper = CreateSplitWrapper(initialContext);
+            _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
         }
 
         public override System.Collections.Immutable.IImmutableList<Hook> GetProviderHooks()
@@ -43,9 +45,10 @@ namespace Splitio.OpenFeature
 
         public override Metadata GetMetadata() => _metadata;
 
-        public void Dispose()
+        public override Task ShutdownAsync(CancellationToken cancellationToken = default)
         {
             _splitWrapper.getSplitClient().Destroy();
+            return Task.CompletedTask;
         }
 
         public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue,
@@ -230,8 +233,13 @@ namespace Splitio.OpenFeature
             {
                 config = (ConfigurationOptions)configs;
             }
-            return new SplitWrapper(apiKey, config);
+            initialContext.TryGetValue(Constants.ReadyBlockTime, out var readyBlockTime);
+            if (readyBlockTime != null)
+            {
+                return new SplitWrapper(apiKey, config, (int)readyBlockTime);
+            }
 
+            return new SplitWrapper(apiKey, config);
         }
         private string GetTargetingKey(EvaluationContext context)
         {
@@ -291,13 +299,11 @@ namespace Splitio.OpenFeature
         {
             if (initialContext == null)
             {
-                _log.Error("Exception: Missing SplitClient instance or SDK ApiKey");
                 throw new ArgumentException("Missing SplitClient instance or SDK ApiKey");
             }
 
             if (!initialContext.ContainsKey(Constants.SplitClientKey) && !initialContext.ContainsKey(Constants.SdkApiKey))
             {
-                _log.Error("Exception: Missing Split SDK ApiKey");
                 throw new ArgumentException("Missing Split SDK ApiKey");
             }
         }

@@ -1,5 +1,7 @@
 ﻿using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
+using Splitio.Services.Logger;
+using Splitio.Services.Shared.Classes;
 using System;
 
 namespace SplitOpenFeatureProvider
@@ -8,24 +10,25 @@ namespace SplitOpenFeatureProvider
     {
         ISplitClient splitClient;
         bool SDKReady = false;
-
+        protected readonly ISplitLogger _log;
         public SplitWrapper(ISplitClient splitClient)
         {
             this.splitClient = splitClient;
         }
 
-        public SplitWrapper(string ApiKey, ConfigurationOptions Configs) 
+        public SplitWrapper(string ApiKey, ConfigurationOptions Configs, int ReadyBlockTime=10000) 
         {
             var factory = new SplitFactory(ApiKey, Configs);
+            _log = WrapperAdapter.Instance().GetLogger(typeof(SplitWrapper));
             splitClient = (SplitClient)factory.Client();
             try
             {
-                splitClient.BlockUntilReady(5000);
+                splitClient.BlockUntilReady(ReadyBlockTime);
                 SDKReady = true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception initializing Split client! {ex}");
+                LogIfNotNull($"Split SDK Not ready within {ReadyBlockTime} ms!");
             }
         }
 
@@ -45,9 +48,17 @@ namespace SplitOpenFeatureProvider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Split client is not ready");
+                LogIfNotNull($"Split client is not ready");
             }
             return SDKReady;
+        }
+
+        private void LogIfNotNull(string message)
+        {
+            if (_log != null)
+            {
+                _log.Error(message);
+            }
         }
     }
 }

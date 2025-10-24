@@ -188,6 +188,7 @@ namespace ProviderTests
 
             var result = await client.GetDoubleValueAsync("int_feature", 0D);
             Assert.AreEqual(32D, result);
+            await Api.Instance.ShutdownAsync();
         }
 
         [TestMethod]
