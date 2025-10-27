@@ -15,7 +15,6 @@ namespace ProviderTests
     public class ProviderInternalSplitClientTests
     {
         FeatureClient client;
-        ISplitClient sdk;
         Dictionary<string, object> initialContext = new Dictionary<string, object>();
 
         public ProviderInternalSplitClientTests()

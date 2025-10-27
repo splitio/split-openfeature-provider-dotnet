@@ -41,7 +41,7 @@ namespace ProviderTests
             {
                 splitClient.BlockUntilReady(1000);
             }
-            catch (Exception ex) {}
+            catch (Exception) {}
 
             SplitWrapper splitWrapper = new SplitWrapper(splitClient);
             Assert.IsNotNull(splitWrapper);
