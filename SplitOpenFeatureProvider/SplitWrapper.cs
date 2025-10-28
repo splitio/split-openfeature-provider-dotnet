@@ -8,7 +8,7 @@ namespace SplitOpenFeatureProvider
 {
     public class SplitWrapper
     {
-        ISplitClient splitClient;
+        readonly ISplitClient splitClient;
         bool SDKReady = false;
         protected readonly ISplitLogger _log;
         public SplitWrapper(ISplitClient splitClient)
@@ -26,7 +26,7 @@ namespace SplitOpenFeatureProvider
                 splitClient.BlockUntilReady(ReadyBlockTime);
                 SDKReady = true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 LogIfNotNull($"Split SDK Not ready within {ReadyBlockTime} ms!");
             }
@@ -46,7 +46,7 @@ namespace SplitOpenFeatureProvider
                 splitClient.BlockUntilReady(1);
                 SDKReady = true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 LogIfNotNull($"Split client is not ready");
             }

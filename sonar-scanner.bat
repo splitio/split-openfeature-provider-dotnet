@@ -34,12 +34,12 @@ IF NOT "%APPVEYOR_PULL_REQUEST_NUMBER%"=="" (
       CALL :sonar_scanner ^
         "/d:sonar.branch.name="%APPVEYOR_REPO_BRANCH%""
     ) ELSE (
-        IF "%APPVEYOR_REPO_BRANCH%"=="dev" (
+        IF "%APPVEYOR_REPO_BRANCH%"=="development" (
           echo "Development branch."
           SET "TARGET_BRANCH=main"
           ) ELSE (
               echo "Feature branch."
-              SET "TARGET_BRANCH=dev"
+              SET "TARGET_BRANCH=development"
             )
       echo Branch Name is %APPVEYOR_REPO_BRANCH%
       echo Target Branch is !TARGET_BRANCH!

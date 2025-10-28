@@ -481,7 +481,7 @@ namespace ProviderTests
             {
                 client.Track("");
             }
-            catch (Exception ex) { }
+            catch (Exception) { }
             Assert.AreEqual(0, splitClient.Invocations.Count);
         }
 

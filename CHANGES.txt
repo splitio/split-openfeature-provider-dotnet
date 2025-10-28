@@ -1,6 +1,9 @@
 1.0.0
 - First release. Up to date with OpenFeature .NET SDK 1.0.1
-2.0.0
-- Updated to OpenFeature .NET SDK 2.6.9
-- Updated to Split .NET SDK 2.6.0
-- Updated Provider to match the OpenFeature .NET SDK
+
+2.0.0 (Oct xx, 2025)
+- BREAKING CHANGE: Passing the SplitClient object to Provider constructor is now only through the initialization context dictionary
+- Updated to OpenFeature .NET SDK 2.9.0
+- Updated to Split .NET SDK 7.12.0
+- Added support for NET 9 and NetFramework 462
+- Added ability to pass Ready Timeout and ConfigurationOptions to Provider initialization

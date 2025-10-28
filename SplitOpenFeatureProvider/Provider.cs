@@ -19,7 +19,7 @@ namespace Splitio.OpenFeature
     public class Provider : FeatureProvider
     {
         private readonly Metadata _metadata = new Metadata(Constants.ProviderName);
-        private SplitWrapper _splitWrapper;
+        private readonly SplitWrapper _splitWrapper;
         protected readonly ISplitLogger _log;
 
         public Provider(Dictionary<string, object> initialContext)
@@ -38,11 +38,6 @@ namespace Splitio.OpenFeature
             _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
         }
 
-        public override System.Collections.Immutable.IImmutableList<Hook> GetProviderHooks()
-        {
-            return base.GetProviderHooks();
-        }
-
         public override Metadata GetMetadata() => _metadata;
 
         public override Task ShutdownAsync(CancellationToken cancellationToken = default)
@@ -54,31 +49,31 @@ namespace Splitio.OpenFeature
         public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue,
             EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            return Evaluate<bool>(flagKey, defaultValue, context, cancellationToken);  
+            return Evaluate<bool>(flagKey, defaultValue, context);  
         }
 
         public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue,
             EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            return Evaluate<string>(flagKey, defaultValue, context, cancellationToken);
+            return Evaluate<string>(flagKey, defaultValue, context);
         }
 
         public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue,
             EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            return Evaluate<int>(flagKey, defaultValue, context, cancellationToken);
+            return Evaluate<int>(flagKey, defaultValue, context);
         }
 
         public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue,
             EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            return Evaluate<double>(flagKey, defaultValue, context, cancellationToken);
+            return Evaluate<double>(flagKey, defaultValue, context);
         }
 
         public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue,
             EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            return Evaluate<Value>(flagKey, defaultValue, context, cancellationToken);
+            return Evaluate<Value>(flagKey, defaultValue, context);
         }
 
         public override void Track(string trackingEventName, EvaluationContext evaluationContext = null, TrackingEventDetails trackingEventDetails = null)
@@ -106,7 +101,7 @@ namespace Splitio.OpenFeature
                 attributes);
         }
 
-        private ResolutionDetails<T> KeyNotFound<T>(string flagKey, T defaultValue)
+        private static ResolutionDetails<T> KeyNotFound<T>(string flagKey, T defaultValue)
         {
             return new ResolutionDetails<T>(
                                 flagKey,
@@ -116,7 +111,7 @@ namespace Splitio.OpenFeature
                                 errorType: ErrorType.TargetingKeyMissing);
         }
 
-        private ResolutionDetails<T> ParseError<T>(string flagKey, T defaultValue)
+        private static ResolutionDetails<T> ParseError<T>(string flagKey, T defaultValue)
         {
             return new ResolutionDetails<T>(
                                 flagKey,
@@ -126,7 +121,7 @@ namespace Splitio.OpenFeature
                                 errorType: ErrorType.ParseError);
         }
 
-        private ResolutionDetails<T> FlagNotFound<T>(string flagKey, T defaultValue)
+        private static ResolutionDetails<T> FlagNotFound<T>(string flagKey, T defaultValue)
         {
             return new ResolutionDetails<T>(
                                 flagKey,
@@ -136,7 +131,7 @@ namespace Splitio.OpenFeature
                                 errorType: ErrorType.FlagNotFound);
         }
 
-        private ResolutionDetails<T> ProviderNotReady<T>(string flagKey, T defaultValue)
+        private static ResolutionDetails<T> ProviderNotReady<T>(string flagKey, T defaultValue)
         {
             return new ResolutionDetails<T>(
                                 flagKey,
@@ -147,7 +142,7 @@ namespace Splitio.OpenFeature
         }
 
         private Task<ResolutionDetails<T>> Evaluate<T>(string flagKey, T defaultValue,
-            EvaluationContext context = null, CancellationToken cancellationToken = default)
+            EvaluationContext context = null)
         {
             if (!_splitWrapper.IsSDKReady())
             {
@@ -206,7 +201,7 @@ namespace Splitio.OpenFeature
                 T evaluationResult = Parse<T>(originalResult);
 	            return Task.FromResult(new ResolutionDetails<T>(
                         flagKey,
-                        (T)evaluationResult,
+                        evaluationResult,
                         variant: structureResult.Treatment,
                         flagMetadata: new ImmutableMetadata(
                             new Dictionary<string, object>
@@ -223,7 +218,7 @@ namespace Splitio.OpenFeature
             }
         }
 
-        private SplitWrapper CreateSplitWrapper(Dictionary<string, object> initialContext)
+        private static SplitWrapper CreateSplitWrapper(Dictionary<string, object> initialContext)
         {
             initialContext.TryGetValue(Constants.SdkApiKey, out var key);
             string apiKey = (string)key;
@@ -264,11 +259,11 @@ namespace Splitio.OpenFeature
             var type = typeof(T);
             if (type == typeof(bool))
             {
-                if (strValue.ToLower() == "true" || strValue.ToLower() == "on") {
+                if (strValue.ToLower().Equals("true") || strValue.ToLower().Equals("on")) {
                     object vv = true;
                     return (T)vv;
                 }
-                if (strValue.ToLower() == "false" || strValue.ToLower() == "off")
+                if (strValue.ToLower().Equals("false") || strValue.ToLower().Equals("off"))
                 {
                     object vv = false;
                     return (T)vv;
@@ -295,7 +290,7 @@ namespace Splitio.OpenFeature
             throw new FormatException("Could not parse value");
         }       
 
-        private void ValidateInitialContext(Dictionary<string, object> initialContext)
+        private static void ValidateInitialContext(Dictionary<string, object> initialContext)
         {
             if (initialContext == null)
             {
