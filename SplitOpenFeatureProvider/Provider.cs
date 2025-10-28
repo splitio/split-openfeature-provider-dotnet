@@ -1,6 +1,7 @@
 using Newtonsoft.Json.Linq;
 using OpenFeature;
 using OpenFeature.Constant;
+using OpenFeature.Error;
 using OpenFeature.Model;
 using Splitio.Domain;
 using Splitio.Services.Client.Classes;
@@ -73,7 +74,7 @@ namespace Splitio.OpenFeature
         public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue,
             EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            return Evaluate<Value>(flagKey, defaultValue, context);
+            throw new FeatureProviderException(ErrorType.ProviderFatal, "Split Provider does not support JSON Treatments");
         }
 
         public override void Track(string trackingEventName, EvaluationContext evaluationContext = null, TrackingEventDetails trackingEventDetails = null)
@@ -171,33 +172,6 @@ namespace Splitio.OpenFeature
         {
             try
             {
-                if (typeof(T) == typeof(Value))
-                {
-                    var jsonString = structureResult.Config;
-                    var dict = JObject.Parse(jsonString).ToObject<Dictionary<string, string>>();
-                    if (dict == null)
-                    {
-                        _log.Warn($"Exception: {originalResult} is not a Json");
-                        return Task.FromResult(ParseError<T>(flagKey, defaultValue));
-                    }
-
-                    var dict2 = dict.ToDictionary(x => x.Key, x => new Value(x.Value));
-                    var dictValue = new Value(new Structure(dict2));
-                    object vv = dictValue;
-
-                    return Task.FromResult(new ResolutionDetails<T>(
-                        flagKey,
-                        (T)vv,
-                        variant: structureResult.Treatment,
-                        flagMetadata: new ImmutableMetadata(
-                            new Dictionary<string, object>
-                            {
-                                { "config", structureResult.Config },
-                            }),
-                        reason: Reason.TargetingMatch,
-                        errorType: ErrorType.None));
-                }
-
                 T evaluationResult = Parse<T>(originalResult);
 	            return Task.FromResult(new ResolutionDetails<T>(
                         flagKey,
@@ -211,7 +185,7 @@ namespace Splitio.OpenFeature
                         reason: Reason.TargetingMatch,
                         errorType: ErrorType.None));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 _log.Error($"Exception: {originalResult} is not a {typeof(T)}");
                 return Task.FromResult(ParseError<T>(flagKey, defaultValue));
