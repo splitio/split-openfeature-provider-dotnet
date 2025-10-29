@@ -13,5 +13,5 @@
 - int_feature_2:
     treatment: "32"
 - obj_feature:
-    treatment: "{\"key\": \"value\"}"
+    treatment: "value"
     config: "{\"key\": \"value\"}"

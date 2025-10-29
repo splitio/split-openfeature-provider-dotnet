@@ -2,6 +2,7 @@
 using Moq;
 using OpenFeature;
 using OpenFeature.Constant;
+using OpenFeature.Error;
 using OpenFeature.Model;
 using Splitio.OpenFeature;
 using Splitio.Services.Client.Classes;
@@ -173,9 +174,8 @@ namespace ProviderTests
             var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
             client.SetContext(context);
 
-            var result = await client.GetObjectValueAsync("obj_feature", new Value());
-            Structure expectedValue = Structure.Builder().Set("key", new Value("value")).Build();
-            Assert.IsTrue(StructuresMatch(expectedValue, result.AsStructure));
+            var result = await client.GetObjectValueAsync("obj_feature", new Value("default"));
+            Assert.AreEqual("default", result.AsString);
         }
 
         [TestMethod]
@@ -271,14 +271,10 @@ namespace ProviderTests
             var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
             client.SetContext(context);
 
-            var details = await client.GetObjectDetailsAsync("obj_feature", new Value());
-            Assert.AreEqual("obj_feature", details.FlagKey);
-            Assert.AreEqual(Reason.TargetingMatch, details.Reason);
-            Structure expected = Structure.Builder().Set("key", new Value("value")).Build();
-            Assert.IsTrue(StructuresMatch(expected, details.Value.AsStructure));
-            // the flag's treatment is stored as a string, and the variant is that raw string
-            Assert.AreEqual("{\"key\": \"value\"}", details.Variant);
-            Assert.AreEqual(ErrorType.None, details.ErrorType);
+            var details = await client.GetObjectDetailsAsync("obj_feature", new Value("default"));
+            Assert.AreEqual(ErrorType.ProviderFatal, details.ErrorType);
+            Assert.AreEqual("Split Provider does not support JSON Treatments", details.ErrorMessage);
+            Assert.AreEqual("default", details.Value.AsString);
         }
 
         [TestMethod]
@@ -336,25 +332,6 @@ namespace ProviderTests
         }
 
         [TestMethod]
-        public async Task GetObjectFailTest()
-        {
-            await Api.Instance.SetProviderAsync(new Provider(initialContext));
-            client = OpenFeature.Api.Instance.GetClient();
-            var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
-            client.SetContext(context);
-
-            // attempt to fetch an int as an object. Should result in the default
-            Structure defaultValue = Structure.Builder().Set("key", new Value("value")).Build();
-            var value = await client.GetObjectValueAsync("int_feature_2", new Value(defaultValue));
-            Assert.IsTrue(StructuresMatch(defaultValue, value.AsStructure));
-
-            var details = await client.GetObjectDetailsAsync("int_feature_2", new Value(defaultValue));
-            Assert.IsTrue(StructuresMatch(defaultValue, details.Value.AsStructure));
-            Assert.AreEqual(ErrorType.ParseError, details.ErrorType);
-            Assert.AreEqual(Reason.Error, details.Reason);
-        }
-
-        [TestMethod]
         public async Task SDKNotReadyTest()
         {
             var config2 = new ConfigurationOptions
@@ -373,7 +350,7 @@ namespace ProviderTests
 
             var result = await client.GetStringValueAsync("some_other_feature", "on");
             Assert.AreEqual("on", result);
-            var details = await client.GetObjectDetailsAsync("some_other_feature", new Value("on"));
+            var details = await client.GetStringDetailsAsync("some_other_feature", "default");
             Assert.AreEqual(ErrorType.ProviderNotReady, details.ErrorType);
             Assert.AreEqual(Reason.Error, details.Reason);
             sdk2.Destroy();
