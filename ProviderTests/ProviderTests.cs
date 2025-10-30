@@ -2,7 +2,6 @@
 using Moq;
 using OpenFeature;
 using OpenFeature.Constant;
-using OpenFeature.Error;
 using OpenFeature.Model;
 using Splitio.OpenFeature;
 using Splitio.Services.Client.Classes;
@@ -176,6 +175,10 @@ namespace ProviderTests
 
             var result = await client.GetObjectValueAsync("obj_feature", new Value("default"));
             Assert.AreEqual("default", result.AsString);
+
+            result = await client.GetObjectValueAsync("obj_feature_special", new Value("default"));
+            Structure expectedValue = Structure.Builder().Set("treatment", new Value("on")).Build();
+            Assert.IsTrue(StructuresMatch(expectedValue, result.AsStructure));
         }
 
         [TestMethod]
@@ -274,6 +277,11 @@ namespace ProviderTests
             var details = await client.GetObjectDetailsAsync("obj_feature", new Value("default"));
             Assert.AreEqual(ErrorType.ParseError, details.ErrorType);
             Assert.AreEqual("default", details.Value.AsString);
+
+            var result = await client.GetObjectDetailsAsync("obj_feature_special", new Value("default"));
+            Structure expectedValue = Structure.Builder().Set("treatment", new Value("on")).Build();
+            Assert.IsTrue(StructuresMatch(expectedValue, result.Value.AsStructure));
+            Assert.AreEqual("{\"key\": \"value\"}", result.FlagMetadata.GetString("config"));
         }
 
         [TestMethod]
