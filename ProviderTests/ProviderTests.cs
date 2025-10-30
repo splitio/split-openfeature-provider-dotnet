@@ -272,8 +272,7 @@ namespace ProviderTests
             client.SetContext(context);
 
             var details = await client.GetObjectDetailsAsync("obj_feature", new Value("default"));
-            Assert.AreEqual(ErrorType.ProviderFatal, details.ErrorType);
-            Assert.AreEqual("Split Provider does not support JSON Treatments", details.ErrorMessage);
+            Assert.AreEqual(ErrorType.ParseError, details.ErrorType);
             Assert.AreEqual("default", details.Value.AsString);
         }
 
