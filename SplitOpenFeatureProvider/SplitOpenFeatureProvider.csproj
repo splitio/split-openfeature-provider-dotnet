@@ -5,6 +5,17 @@
     <RootNamespace>Splitio.OpenFeature</RootNamespace>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Version>2.0.0</Version>
+    <AssemblyName>SplitOpenFeatureProvider</AssemblyName>
+    <PackageId>SplitOpenFeatureProvider</PackageId>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>SplitOpenFeatureProvider.snk</AssemblyOriginatorKeyFile>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/splitio/split-openfeature-provider-dotnet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/splitio/split-openfeature-provider-dotnet</RepositoryUrl>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="OpenFeature" />
