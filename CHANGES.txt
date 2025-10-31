@@ -1,9 +1,9 @@
 1.0.0
 - First release. Up to date with OpenFeature .NET SDK 1.0.1
 
-2.0.0 (Oct xx, 2025)
+2.0.0 (Oct 31, 2025)
 - BREAKING CHANGE: Passing the SplitClient object to Provider constructor is now only through the initialization context dictionary
-- BREAKING CHANGE: Provider will throw exception when ObjectDetail and ObjectValue evaluation is used, since Split platform does not support treatments as JSON structure.
+- BREAKING CHANGE: Provider will throw exception when ObjectDetail and ObjectValue evaluation is used, since it will attempt to parse the treatment as a JSON structure.
 - Updated to OpenFeature .NET SDK 2.9.0
 - Updated to Split .NET SDK 7.12.0
 - Added support for NET 9 and NetFramework 462

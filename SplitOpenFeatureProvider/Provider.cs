@@ -1,7 +1,6 @@
 using Newtonsoft.Json.Linq;
 using OpenFeature;
 using OpenFeature.Constant;
-using OpenFeature.Error;
 using OpenFeature.Model;
 using Splitio.Domain;
 using Splitio.Services.Client.Classes;
@@ -74,7 +73,7 @@ namespace Splitio.OpenFeature
         public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue,
             EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            throw new FeatureProviderException(ErrorType.ProviderFatal, "Split Provider does not support JSON Treatments");
+            return Evaluate<Value>(flagKey, defaultValue, context);
         }
 
         public override void Track(string trackingEventName, EvaluationContext evaluationContext = null, TrackingEventDetails trackingEventDetails = null)
@@ -258,6 +257,17 @@ namespace Splitio.OpenFeature
             {
                 var evaluationResult = double.Parse(strValue);
                 object vv = evaluationResult;
+                return (T)vv;
+            }
+            else if (type == typeof(Value))
+            {
+                var dict = JObject.Parse(strValue).ToObject<Dictionary<string, string>>();
+                if (dict == null)
+                {
+                    throw new FormatException("Could not parse value");
+                }
+                var dict2 = dict.ToDictionary(x => x.Key, x => new Value(x.Value));
+                object vv = new Value(new Structure(dict2));
                 return (T)vv;
             }
 
