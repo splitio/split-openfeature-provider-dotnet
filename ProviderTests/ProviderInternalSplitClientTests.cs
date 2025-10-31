@@ -1,27 +1,22 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using OpenFeature;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 using Splitio.OpenFeature;
 using Splitio.Services.Client.Classes;
-using Splitio.Services.Client.Interfaces;
-using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ProviderTests
 {
 
     [TestClass]
-    public class ProviderTests
+    public class ProviderInternalSplitClientTests
     {
         FeatureClient client;
-        ISplitClient sdk;
-        Dictionary<String, Object> initialContext = new Dictionary<String, Object>();
+        Dictionary<string, object> initialContext = new Dictionary<string, object>();
 
-        public ProviderTests()
+        public ProviderInternalSplitClientTests()
         {
             // Create the Split client
             var config = new ConfigurationOptions
@@ -29,34 +24,8 @@ namespace ProviderTests
                 LocalhostFilePath = "../../../split.yaml",
                 Logger = new CustomLogger()
             };
-            var factory = new SplitFactory("localhost", config);
-            sdk = factory.Client();
-            try
-            {
-                sdk.BlockUntilReady(10000);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Exception initializing Split client! {ex}");
-                throw;
-            }
-            initialContext.Add("SplitClient", sdk);
-        }
-
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentException), "Missing SplitClient instance or SDK ApiKey")]
-        public async Task InitializeWithNullTest()
-        {
-            await Api.Instance.SetProviderAsync(new Provider(null));
-        }
-
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentException), "Missing Split SDK ApiKey")]
-        public async Task InitializeWithoutApiKeyTest()
-        {
-            Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
-            initialContext2.Add("something", "sdk");
-            await Api.Instance.SetProviderAsync(new Provider(initialContext2));
+            initialContext.Add("ConfigOptions", config);
+            initialContext.Add("ApiKey", "localhost");
         }
 
         [TestMethod]
@@ -85,6 +54,7 @@ namespace ProviderTests
             Structure defaultStructure = Structure.Builder().Set("foo", new Value("bar")).Build();
             Value resultStructure = await client.GetObjectValueAsync(flagName, new Value(defaultStructure));
             Assert.IsTrue(StructuresMatch(defaultStructure, resultStructure.AsStructure));
+            await Api.Instance.ShutdownAsync();
         }
 
         [TestMethod]
@@ -191,7 +161,6 @@ namespace ProviderTests
 
             var result = await client.GetDoubleValueAsync("int_feature", 0D);
             Assert.AreEqual(32D, result);
-            await Api.Instance.ShutdownAsync();
         }
 
         [TestMethod]
@@ -209,7 +178,6 @@ namespace ProviderTests
             // the flag has a treatment of "off", this is returned as a value of false but the variant is still "off"
             Assert.AreEqual("off", details.Variant);
             Assert.AreEqual(ErrorType.None, details.ErrorType);
-            Assert.AreEqual("{\"key\": \"value\"}", details.FlagMetadata.GetString("config"));
         }
 
         [TestMethod]
@@ -227,7 +195,6 @@ namespace ProviderTests
             // the flag has a treatment of "off", this is returned as a value of false but the variant is still "off"
             Assert.AreEqual("32", details.Variant);
             Assert.AreEqual(ErrorType.None, details.ErrorType);
-            Assert.AreEqual("{\"key\": \"value\"}", details.FlagMetadata.GetString("config"));
         }
 
         [TestMethod]
@@ -245,7 +212,6 @@ namespace ProviderTests
             // the flag has a treatment of "off", this is returned as a value of false but the variant is still "off"
             Assert.AreEqual("off", details.Variant);
             Assert.AreEqual(ErrorType.None, details.ErrorType);
-            Assert.AreEqual("{\"key\": \"value\"}", details.FlagMetadata.GetString("config"));
         }
 
         [TestMethod]
@@ -263,7 +229,6 @@ namespace ProviderTests
             // the flag has a treatment of "off", this is returned as a value of false but the variant is still "off"
             Assert.AreEqual("32", details.Variant);
             Assert.AreEqual(ErrorType.None, details.ErrorType);
-            Assert.AreEqual("{\"key\": \"value\"}", details.FlagMetadata.GetString("config"));
         }
 
         [TestMethod]
@@ -281,7 +246,6 @@ namespace ProviderTests
             var result = await client.GetObjectDetailsAsync("obj_feature_special", new Value("default"));
             Structure expectedValue = Structure.Builder().Set("treatment", new Value("on")).Build();
             Assert.IsTrue(StructuresMatch(expectedValue, result.Value.AsStructure));
-            Assert.AreEqual("{\"key\": \"value\"}", result.FlagMetadata.GetString("config"));
         }
 
         [TestMethod]
@@ -339,16 +303,37 @@ namespace ProviderTests
         }
 
         [TestMethod]
+        public async Task PassSDKReadyTimeTest()
+        {
+            var config2 = new ConfigurationOptions
+            {
+                LocalhostFilePath = "../../../split.yaml",
+                Logger = new CustomLogger()
+            };
+            Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
+            initialContext2.Add("ConfigOptions", config2);
+            initialContext2.Add("ApiKey", "localhost");
+            initialContext2.Add("ReadyBlockTime", 1000);
+
+            await Api.Instance.SetProviderAsync(new Provider(initialContext2));
+            client = OpenFeature.Api.Instance.GetClient();
+            var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
+            client.SetContext(context);
+
+            var result = await client.GetStringValueAsync("some_other_feature", "on");
+            Assert.AreEqual("off", result);
+        }
+
+        [TestMethod]
         public async Task SDKNotReadyTest()
         {
             var config2 = new ConfigurationOptions
             {
                 FeaturesRefreshRate = 1000
             };
-            var factory2 = new SplitFactory("apikey", config2);
-            ISplitClient sdk2 = factory2.Client();
             Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
-            initialContext2.Add("SplitClient", sdk2);
+            initialContext2.Add("ConfigOptions", config2);
+            initialContext2.Add("ApiKey", "apikey");
 
             await Api.Instance.SetProviderAsync(new Provider(initialContext2));
             client = OpenFeature.Api.Instance.GetClient();
@@ -360,113 +345,7 @@ namespace ProviderTests
             var details = await client.GetStringDetailsAsync("some_other_feature", "default");
             Assert.AreEqual(ErrorType.ProviderNotReady, details.ErrorType);
             Assert.AreEqual(Reason.Error, details.Reason);
-            sdk2.Destroy();
-        }
-
-        [TestMethod]
-        public async Task TestTrack()
-        {
-            Mock<ISplitClient> splitClient = new Mock<ISplitClient>();
-            Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
-            initialContext2.Add("SplitClient", splitClient);
-            Provider splitProvider = new Provider(initialContext); 
-            await Api.Instance.SetProviderAsync(splitProvider);
-
-            Type type = typeof(Provider);
-            FieldInfo privatePropertyInfo = type.GetField("_splitWrapper", BindingFlags.Instance | BindingFlags.NonPublic);
-            SplitOpenFeatureProvider.SplitWrapper splitwrapper = (SplitOpenFeatureProvider.SplitWrapper)privatePropertyInfo.GetValue(splitProvider);
-
-            type = typeof(SplitOpenFeatureProvider.SplitWrapper);
-            FieldInfo splitClientProp = type.GetField("splitClient", BindingFlags.Instance | BindingFlags.NonPublic);
-            splitClientProp.SetValue(splitwrapper, splitClient.Object);
-
-            client = OpenFeature.Api.Instance.GetClient();
-            var context = EvaluationContext.Builder()
-                .Set("targetingKey", "key")
-                .Set("trafficType", "user")
-                .Build();
-            var eventDetails = TrackingEventDetails.Builder()
-                .SetValue(10)
-                .Set("prop", "val")
-                .Build();
-            client.SetContext(context);
-
-            client.Track("event", context, eventDetails);
-            Assert.AreEqual(1, splitClient.Invocations.Count);
-            foreach (var item in splitClient.Invocations)
-            {
-                int count = 0;
-                Assert.AreEqual(5, item.Arguments.Count);
-                foreach (var arg in item.Arguments)
-                {
-                    switch (count)
-                    {
-                        case 0: Assert.AreEqual("key", arg.ToString()); break;
-                        case 1: Assert.AreEqual("user", arg.ToString()); break;
-                        case 2: Assert.AreEqual("event", arg.ToString()); break;
-                        case 3: Assert.AreEqual((double)10, arg); break;
-                        case 4:
-                            {
-                                Dictionary<string, object> temp = (Dictionary<string, object>)arg;
-                                Assert.IsTrue(temp.ContainsValue("val"));
-                                Assert.IsTrue(temp.ContainsKey("prop"));
-                                break;
-                            }
-                        }
-                    count++;
-                }
-            }
-        }
-
-        [TestMethod]
-        public async Task TestTrackWithInvalidArguments()
-        {
-            Mock<ISplitClient> splitClient = new Mock<ISplitClient>();
-            Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
-            initialContext2.Add("SplitClient", splitClient);
-            Provider splitProvider = new Provider(initialContext);
-            await Api.Instance.SetProviderAsync(splitProvider);
-
-            Type type = typeof(Provider);
-            FieldInfo privatePropertyInfo = type.GetField("_splitWrapper", BindingFlags.Instance | BindingFlags.NonPublic);
-            SplitOpenFeatureProvider.SplitWrapper splitwrapper = (SplitOpenFeatureProvider.SplitWrapper)privatePropertyInfo.GetValue(splitProvider);
-
-            type = typeof(SplitOpenFeatureProvider.SplitWrapper);
-            FieldInfo splitClientProp = type.GetField("splitClient", BindingFlags.Instance | BindingFlags.NonPublic);
-            splitClientProp.SetValue(splitwrapper, splitClient.Object);
-
-            client = OpenFeature.Api.Instance.GetClient();
-            var context = EvaluationContext.Builder()
-                .Set("trafficType", "user")
-                .Build();
-            client.SetContext(context);
-            client.Track("event");
-            Assert.AreEqual(0, splitClient.Invocations.Count);
-
-            context = EvaluationContext.Builder()
-                .Set("targetingKey", "key")
-                .Build();
-            client.SetContext(context);
-            client.Track("event");
-            Assert.AreEqual(0, splitClient.Invocations.Count);
-
-            context = EvaluationContext.Builder()
-                .Build();
-            client.SetContext(context);
-            client.Track("event");
-            Assert.AreEqual(0, splitClient.Invocations.Count);
-
-            context = EvaluationContext.Builder()
-                .Set("targetingKey", "key")
-                .Set("trafficType", "user")
-                .Build();
-            client.SetContext(context);
-            try
-            {
-                client.Track("");
-            }
-            catch (Exception) { }
-            Assert.AreEqual(0, splitClient.Invocations.Count);
+            await OpenFeature.Api.Instance.GetProvider().ShutdownAsync();
         }
 
         private static bool StructuresMatch(Structure s1, Structure s2)

@@ -17,12 +17,6 @@ The Split Provider is an open source project and we welcome feedback and contrib
 9. Check for conflicts once the pull request is created to make sure your PR can be merged cleanly into `development`.
 10. Keep an eye out for any feedback or comments from the Split team.
 
-### Building the Split Provider
-- `mvn clean build`
-
-### Running tests
-- `mvn clean install`
-
 # Contact
 
 If you have any other questions or need to contact us directly in a private manner send us a note at sdks@split.io

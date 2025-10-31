@@ -1,122 +1,221 @@
-﻿using OpenFeature;
-using OpenFeature.Model;
-using OpenFeature.Constant;
-using OpenFeature.Error;
-using Splitio.Services.Client.Interfaces;
 using Newtonsoft.Json.Linq;
+using OpenFeature;
+using OpenFeature.Constant;
+using OpenFeature.Model;
+using Splitio.Domain;
+using Splitio.Services.Client.Classes;
+using Splitio.Services.Client.Interfaces;
+using Splitio.Services.Logger;
+using Splitio.Services.Shared.Classes;
+using SplitOpenFeatureProvider;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Splitio.OpenFeature
 {
     public class Provider : FeatureProvider
     {
-        private readonly Metadata _metadata = new("Split Client");
-        private readonly ISplitClient _client;
+        private readonly Metadata _metadata = new Metadata(Constants.ProviderName);
+        private readonly SplitWrapper _splitWrapper;
+        protected readonly ISplitLogger _log;
 
-        public Provider(ISplitClient client)
+        public Provider(Dictionary<string, object> initialContext)
         {
-            _client = client;
+            ValidateInitialContext(initialContext);
+
+            if (initialContext.ContainsKey(Constants.SplitClientKey))
+            {
+                initialContext.TryGetValue(Constants.SplitClientKey, out var client);
+                _splitWrapper = new SplitWrapper((ISplitClient)client);
+                _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
+                return;
+            }
+
+            _splitWrapper = CreateSplitWrapper(initialContext);
+            _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
         }
 
         public override Metadata GetMetadata() => _metadata;
 
-        public override Task<ResolutionDetails<bool>> ResolveBooleanValue(string flagKey, bool defaultValue,
-            EvaluationContext context)
+        public override Task ShutdownAsync(CancellationToken cancellationToken = default)
         {
-            var key = GetTargetingKey(context);
-            var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
-            if (originalResult == "control")
-            {
-                return Task.FromResult(new ResolutionDetails<bool>(flagKey, defaultValue, variant: originalResult, errorType: ErrorType.FlagNotFound));
-            }
-            var evaluationResult = ParseBoolean(originalResult);
-            return Task.FromResult(new ResolutionDetails<bool>(flagKey, evaluationResult, errorType: ErrorType.None, variant: originalResult, reason: Reason.TargetingMatch));
+            _splitWrapper.getSplitClient().Destroy();
+            return Task.CompletedTask;
         }
 
-        public override Task<ResolutionDetails<string>> ResolveStringValue(string flagKey, string defaultValue,
-            EvaluationContext context)
+        public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue,
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            var key = GetTargetingKey(context);
-            var evaluationResult = _client.GetTreatment(key, flagKey, TransformContext(context));
-            if (evaluationResult == "control")
-            {
-                return Task.FromResult(new ResolutionDetails<string>(flagKey, defaultValue, variant: evaluationResult, errorType: ErrorType.FlagNotFound));
-            }
-            return Task.FromResult(new ResolutionDetails<string>(flagKey, evaluationResult ?? defaultValue, variant: evaluationResult, reason: Reason.TargetingMatch, errorType: ErrorType.None));
+            return Evaluate<bool>(flagKey, defaultValue, context);  
         }
 
-        public override Task<ResolutionDetails<int>> ResolveIntegerValue(string flagKey, int defaultValue,
-            EvaluationContext context)
+        public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue,
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            var key = GetTargetingKey(context);
-            var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
-            if (originalResult == "control")
-            {
-                return Task.FromResult(new ResolutionDetails<int>(flagKey, defaultValue, variant: originalResult, errorType: ErrorType.FlagNotFound));
-            }
-            try {
-                var evaluationResult = int.Parse(originalResult);
-                return Task.FromResult(new ResolutionDetails<int>(flagKey, evaluationResult, variant: originalResult, reason: Reason.TargetingMatch, errorType: ErrorType.None));
-            }
-            catch (FormatException)
-            {
-                throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult} is not an int");
-            };
+            return Evaluate<string>(flagKey, defaultValue, context);
         }
 
-        public override Task<ResolutionDetails<double>> ResolveDoubleValue(string flagKey, double defaultValue,
-            EvaluationContext context)
+        public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue,
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            var key = GetTargetingKey(context);
-            var originalResult = _client.GetTreatment(key, flagKey, TransformContext(context));
-            if (originalResult == "control")
+            return Evaluate<int>(flagKey, defaultValue, context);
+        }
+
+        public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue,
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
+        {
+            return Evaluate<double>(flagKey, defaultValue, context);
+        }
+
+        public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue,
+            EvaluationContext context = null, CancellationToken cancellationToken = default)
+        {
+            return Evaluate<Value>(flagKey, defaultValue, context);
+        }
+
+        public override void Track(string trackingEventName, EvaluationContext evaluationContext = null, TrackingEventDetails trackingEventDetails = null)
+        {
+            if (!ValidateTrackDetails(trackingEventName, evaluationContext))
             {
-                return Task.FromResult(new ResolutionDetails<double>(flagKey, defaultValue, variant: originalResult, errorType: ErrorType.FlagNotFound));
+                _log.Error("Track call is ignored");
+                return;
             }
+
+            var key = GetTargetingKey(evaluationContext);
+            double value = 0;
+            Dictionary<string, object> attributes = new Dictionary<string, object>();
+            if (trackingEventDetails != null)
+            {
+                value = (double)trackingEventDetails.Value;
+                attributes = trackingEventDetails.AsDictionary().ToDictionary(x => x.Key, x => x.Value.AsObject);
+            }
+
+            _splitWrapper.getSplitClient().Track(
+                key,
+                evaluationContext.GetValue(Constants.TrafficType).AsString,
+                trackingEventName,
+                value,
+                attributes);
+        }
+
+        private static ResolutionDetails<T> KeyNotFound<T>(string flagKey, T defaultValue)
+        {
+            return new ResolutionDetails<T>(
+                                flagKey,
+                                defaultValue,
+                                variant: Constants.CONTROL,
+                                reason: Reason.Error,
+                                errorType: ErrorType.TargetingKeyMissing);
+        }
+
+        private static ResolutionDetails<T> ParseError<T>(string flagKey, T defaultValue)
+        {
+            return new ResolutionDetails<T>(
+                                flagKey,
+                                defaultValue,
+                                variant: Constants.CONTROL,
+                                reason: Reason.Error,
+                                errorType: ErrorType.ParseError);
+        }
+
+        private static ResolutionDetails<T> FlagNotFound<T>(string flagKey, T defaultValue)
+        {
+            return new ResolutionDetails<T>(
+                                flagKey,
+                                defaultValue,
+                                variant: Constants.CONTROL,
+                                reason: Reason.Error,
+                                errorType: ErrorType.FlagNotFound);
+        }
+
+        private static ResolutionDetails<T> ProviderNotReady<T>(string flagKey, T defaultValue)
+        {
+            return new ResolutionDetails<T>(
+                                flagKey,
+                                defaultValue,
+                                variant: Constants.CONTROL,
+                                reason: Reason.Error,
+                                errorType: ErrorType.ProviderNotReady);
+        }
+
+        private Task<ResolutionDetails<T>> Evaluate<T>(string flagKey, T defaultValue,
+            EvaluationContext context = null)
+        {
+            if (!_splitWrapper.IsSDKReady())
+            {
+                return Task.FromResult(ProviderNotReady<T>(flagKey, defaultValue));
+            }
+
+            var key = GetTargetingKey(context);
+            if (key == null)
+            {
+                return Task.FromResult(KeyNotFound<T>(flagKey, defaultValue));
+            }
+
+            SplitResult structureResult = _splitWrapper.getSplitClient().GetTreatmentWithConfig(key, flagKey, TransformContext(context));
+            var originalResult = structureResult.Treatment;
+
+            if (originalResult == Constants.CONTROL)
+            {
+                return Task.FromResult(FlagNotFound<T>(flagKey, defaultValue));
+            }
+
+            return ConstructResolution<T>(originalResult, flagKey, defaultValue, structureResult);
+        }
+
+        private Task<ResolutionDetails<T>> ConstructResolution<T>(string originalResult, string flagKey, T defaultValue,
+            SplitResult structureResult)
+        {
             try
             {
-                var evaluationResult = double.Parse(originalResult);
-                return Task.FromResult(new ResolutionDetails<double>(flagKey, evaluationResult, variant: originalResult, reason: Reason.TargetingMatch, errorType: ErrorType.None));
+                T evaluationResult = Parse<T>(originalResult);
+	            return Task.FromResult(new ResolutionDetails<T>(
+                        flagKey,
+                        evaluationResult,
+                        variant: structureResult.Treatment,
+                        flagMetadata: new ImmutableMetadata(
+                            new Dictionary<string, object>
+                            {
+                                { "config", structureResult.Config },
+                            }),
+                        reason: Reason.TargetingMatch,
+                        errorType: ErrorType.None));
             }
-            catch (FormatException)
+            catch (Exception)
             {
-                throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult} is not a double");
+                _log.Error($"Exception: {originalResult} is not a {typeof(T)}");
+                return Task.FromResult(ParseError<T>(flagKey, defaultValue));
             }
         }
 
-        public override Task<ResolutionDetails<Value>> ResolveStructureValue(string flagKey, Value defaultValue, EvaluationContext context)
+        private static SplitWrapper CreateSplitWrapper(Dictionary<string, object> initialContext)
         {
-            var key = GetTargetingKey(context);
-            var originalResult = _client.GetTreatmentWithConfig(key, flagKey, TransformContext(context));
-            if (originalResult.Treatment == "control")
+            initialContext.TryGetValue(Constants.SdkApiKey, out var key);
+            string apiKey = (string)key;
+            var config = new ConfigurationOptions();
+            initialContext.TryGetValue(Constants.ConfigKey, out var configs);
+            if (configs != null)
             {
-                return Task.FromResult(new ResolutionDetails<Value>(flagKey, defaultValue, variant: originalResult.Treatment, errorType: ErrorType.FlagNotFound));
+                config = (ConfigurationOptions)configs;
             }
-            try {
-                var jsonString = originalResult.Config;
-                var dict = JObject.Parse(jsonString).ToObject<Dictionary<string, string>>();
-                if (dict == null)
-                {
-                    throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult.Config} is not an object");
-                }
-                var dict2 = dict.ToDictionary(x => x.Key, x => new Value(x.Value));
-                var dictValue = new Value(new Structure(dict2));
-                return Task.FromResult(new ResolutionDetails<Value>(flagKey, dictValue, variant: originalResult.Treatment, reason: Reason.TargetingMatch, errorType: ErrorType.None));
-            }
-            catch (Exception ex)
+            initialContext.TryGetValue(Constants.ReadyBlockTime, out var readyBlockTime);
+            if (readyBlockTime != null)
             {
-                Console.WriteLine($"Exception parsing JSON: {ex}");
-                Console.WriteLine($"Attempted to parse: {originalResult.Config}");
-                throw new FeatureProviderException(ErrorType.ParseError, $"{originalResult.Config} is not an object");
+                return new SplitWrapper(apiKey, config, (int)readyBlockTime);
             }
-        }
 
-        private static string GetTargetingKey(EvaluationContext context)
+            return new SplitWrapper(apiKey, config);
+        }
+        private string GetTargetingKey(EvaluationContext context)
         {
             Value key;
             if (!context.TryGetValue("targetingKey", out key))
             {
-                Console.WriteLine("Split provider: targeting key missing!");
-                throw new FeatureProviderException(ErrorType.TargetingKeyMissing, "Split provider requires a userkey");
+                _log.Error("Split provider: targeting key missing!");
+                return null;
             }
             return key.AsString;
         }
@@ -128,14 +227,93 @@ namespace Splitio.OpenFeature
                 : context.AsDictionary().ToDictionary(x => x.Key, x => x.Value.AsObject);
         }
 
-        private static bool ParseBoolean(string boolStr)
+        private static T Parse<T>(string strValue)
         {
-            return boolStr.ToLower() switch
+            var type = typeof(T);
+            if (type == typeof(bool))
             {
-                "on" or "true" => true,
-                "off" or "false" => false,
-                _ => throw new FeatureProviderException(ErrorType.ParseError, $"{boolStr} is not a boolean"),
-            };
+                if (strValue.ToLower().Equals("true") || strValue.ToLower().Equals("on")) {
+                    object vv = true;
+                    return (T)vv;
+                }
+                if (strValue.ToLower().Equals("false") || strValue.ToLower().Equals("off"))
+                {
+                    object vv = false;
+                    return (T)vv;
+                }
+            }
+            else if (type == typeof(string))
+            {
+                object vv = strValue;
+                return (T)vv;
+            }
+            else if (type == typeof(int))
+            {
+                var evaluationResult = int.Parse(strValue);
+                object vv = evaluationResult;
+                return (T)vv;
+            }
+            else if (type == typeof(double))
+            {
+                var evaluationResult = double.Parse(strValue);
+                object vv = evaluationResult;
+                return (T)vv;
+            }
+            else if (type == typeof(Value))
+            {
+                var dict = JObject.Parse(strValue).ToObject<Dictionary<string, string>>();
+                if (dict == null)
+                {
+                    throw new FormatException("Could not parse value");
+                }
+                var dict2 = dict.ToDictionary(x => x.Key, x => new Value(x.Value));
+                object vv = new Value(new Structure(dict2));
+                return (T)vv;
+            }
+
+            throw new FormatException("Could not parse value");
+        }       
+
+        private static void ValidateInitialContext(Dictionary<string, object> initialContext)
+        {
+            if (initialContext == null)
+            {
+                throw new ArgumentException("Missing SplitClient instance or SDK ApiKey");
+            }
+
+            if (!initialContext.ContainsKey(Constants.SplitClientKey) && !initialContext.ContainsKey(Constants.SdkApiKey))
+            {
+                throw new ArgumentException("Missing Split SDK ApiKey");
+            }
+        }
+
+        private bool ValidateTrackDetails(string trackingEventName, EvaluationContext evaluationContext)
+        {
+            if (evaluationContext == null)
+            {
+                _log.Error("Track: Key, trafficType and eventType are required.");
+                return false;
+            }
+
+            if (String.IsNullOrEmpty(trackingEventName)) {
+                _log.Error("Track: eventName should be non-empty string.");
+                return false;
+            }
+
+            if (String.IsNullOrEmpty(GetTargetingKey(evaluationContext)))
+            {
+                _log.Error("Track: Key is insvalid or mising.");
+                return false;
+            }
+
+            if (!evaluationContext.ContainsKey(Constants.TrafficType) || 
+                String.IsNullOrEmpty(evaluationContext.GetValue(Constants.TrafficType).AsString))
+            {
+                _log.Error("Track: trafficType is invalid or mising.");
+                return false;
+            }
+
+            return true;
         }
     }
 }
