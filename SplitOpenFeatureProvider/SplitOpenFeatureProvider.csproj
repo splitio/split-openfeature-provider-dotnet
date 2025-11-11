@@ -10,22 +10,20 @@
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>SplitOpenFeatureProvider.snk</AssemblyOriginatorKeyFile>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/splitio/split-openfeature-provider-dotnet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/splitio/split-openfeature-provider-dotnet</RepositoryUrl>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="OpenFeature" />
     <None Remove="Splitio" />
     <None Remove="Microsoft.TestPlatform" />
-    <None Include="README.md" Pack="true" PackagePath="\"/>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="OpenFeature" Version="2.9.0" />
-    <PackageReference Include="Splitio" Version="7.12.0" />
-    <PackageReference Include="Microsoft.TestPlatform" Version="17.4.0" />
+    <PackageReference Include="OpenFeature" Version="[2.9.0,3.0.0)" />
+    <PackageReference Include="Splitio" Version="[7.12.0,8.0.0)" />
   </ItemGroup>
 </Project>

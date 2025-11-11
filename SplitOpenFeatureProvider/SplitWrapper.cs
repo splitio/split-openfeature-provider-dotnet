@@ -16,9 +16,9 @@ namespace SplitOpenFeatureProvider
             this.splitClient = splitClient;
         }
 
-        public SplitWrapper(string ApiKey, ConfigurationOptions Configs, int ReadyBlockTime=10000) 
+        public SplitWrapper(string SdkKey, ConfigurationOptions Configs, int ReadyBlockTime=10000) 
         {
-            var factory = new SplitFactory(ApiKey, Configs);
+            var factory = new SplitFactory(SdkKey, Configs);
             _log = WrapperAdapter.Instance().GetLogger(typeof(SplitWrapper));
             splitClient = (SplitClient)factory.Client();
             try
