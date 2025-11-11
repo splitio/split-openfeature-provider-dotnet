@@ -28,8 +28,8 @@ build_script:
 test: on
 
 after_test:
- - dotnet pack .\SplitOpenFeatureProvider --configuration Release
+ - dotnet pack .\Splitio.OpenFeature.Provider --configuration Release
 
 artifacts:
- - path: '**\SplitOpenFeatureProvider*.nupkg'
+ - path: '**\Splitio.OpenFeature.Provider*.nupkg'
    name: splitio-openfeature-provider-nuget
