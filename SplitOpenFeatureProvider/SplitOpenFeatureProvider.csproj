@@ -6,7 +6,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Version>2.0.0</Version>
     <AssemblyName>SplitOpenFeatureProvider</AssemblyName>
-    <PackageId>SplitOpenFeatureProvider</PackageId>
+    <PackageId>SplitioOpenFeatureProvider</PackageId>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
