@@ -7,14 +7,14 @@ using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
 using Splitio.Services.Logger;
 using Splitio.Services.Shared.Classes;
-using SplitOpenFeatureProvider;
+using Splitio.OpenFeature.Provider;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Splitio.OpenFeature
+namespace Splitio.OpenFeature.Provider
 {
     public class Provider : FeatureProvider
     {

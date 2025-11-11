@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
-using SplitOpenFeatureProvider;
+using Splitio.OpenFeature.Provider;
 using System;
 using System.IO;
 using System.Text;

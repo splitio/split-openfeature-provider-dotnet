@@ -4,7 +4,7 @@ using Splitio.Services.Logger;
 using Splitio.Services.Shared.Classes;
 using System;
 
-namespace SplitOpenFeatureProvider
+namespace Splitio.OpenFeature.Provider
 {
     public class SplitWrapper
     {
