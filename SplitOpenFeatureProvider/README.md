@@ -20,8 +20,7 @@ var config = new ConfigurationOptions
     Logger = new CustomLogger()
 };
 initialContext.Add("ConfigOptions", config);
-initialContext.Add("ApiKey", "SPLIT SDK API KEY");
-initialContext.Add("ApiKey", "SPLIT SDK API KEY");
+initialContext.Add("SdkKey", "SPLIT SDK API KEY");
 initialContext.Add("ReadyBlockTime", 5000);
 
 Api api = OpenFeature.Api.Instance;

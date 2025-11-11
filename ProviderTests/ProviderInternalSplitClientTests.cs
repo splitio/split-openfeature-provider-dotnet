@@ -25,7 +25,7 @@ namespace ProviderTests
                 Logger = new CustomLogger()
             };
             initialContext.Add("ConfigOptions", config);
-            initialContext.Add("ApiKey", "localhost");
+            initialContext.Add("SdkKey", "localhost");
         }
 
         [TestMethod]
@@ -308,11 +308,11 @@ namespace ProviderTests
             var config2 = new ConfigurationOptions
             {
                 LocalhostFilePath = "../../../split.yaml",
-                Logger = new CustomLogger()
+                 Logger = new CustomLogger()
             };
             Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
             initialContext2.Add("ConfigOptions", config2);
-            initialContext2.Add("ApiKey", "localhost");
+            initialContext2.Add("SdkKey", "localhost");
             initialContext2.Add("ReadyBlockTime", 1000);
 
             await Api.Instance.SetProviderAsync(new Provider(initialContext2));
@@ -333,7 +333,7 @@ namespace ProviderTests
             };
             Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
             initialContext2.Add("ConfigOptions", config2);
-            initialContext2.Add("ApiKey", "apikey");
+            initialContext2.Add("SdkKey", "apikey");
 
             await Api.Instance.SetProviderAsync(new Provider(initialContext2));
             client = OpenFeature.Api.Instance.GetClient();
