@@ -27,7 +27,7 @@ namespace ProviderTests
             var config = new ConfigurationOptions
             {
                 LocalhostFilePath = "../../../split.yaml",
-                // Logger = new CustomLogger()
+                 Logger = new CustomLogger()
             };
             var factory = new SplitFactory("localhost", config);
             sdk = factory.Client();
