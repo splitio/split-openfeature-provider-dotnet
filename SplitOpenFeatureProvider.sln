@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36603.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SplitOpenFeatureProvider", "SplitOpenFeatureProvider\SplitOpenFeatureProvider.csproj", "{09AC3885-FBF1-469A-A900-C14CE57D9DE1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SplitioOpenFeatureProvider", "SplitOpenFeatureProvider\SplitioOpenFeatureProvider.csproj", "{09AC3885-FBF1-469A-A900-C14CE57D9DE1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProviderTests", "ProviderTests\ProviderTests.csproj", "{29BD56B4-6F46-4110-BEBF-28134DDD3620}"
 EndProject
