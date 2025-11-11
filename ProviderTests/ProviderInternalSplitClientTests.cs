@@ -22,7 +22,7 @@ namespace ProviderTests
             var config = new ConfigurationOptions
             {
                 LocalhostFilePath = "../../../split.yaml",
-//                Logger = new CustomLogger()
+                Logger = new CustomLogger()
             };
             initialContext.Add("ConfigOptions", config);
             initialContext.Add("SdkKey", "localhost");
