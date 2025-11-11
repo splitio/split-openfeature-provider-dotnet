@@ -2,7 +2,7 @@
 using OpenFeature;
 using OpenFeature.Constant;
 using OpenFeature.Model;
-using Splitio.OpenFeature;
+using Splitio.OpenFeature.Provider;
 using Splitio.Services.Client.Classes;
 using System.Collections.Generic;
 using System.Threading.Tasks;

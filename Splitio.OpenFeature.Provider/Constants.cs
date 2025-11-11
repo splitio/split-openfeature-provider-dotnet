@@ -1,4 +1,4 @@
-﻿namespace Splitio.OpenFeature
+﻿namespace Splitio.OpenFeature.Provider
 {
     internal static class Constants
     {

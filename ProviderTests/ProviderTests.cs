@@ -3,7 +3,7 @@ using Moq;
 using OpenFeature;
 using OpenFeature.Constant;
 using OpenFeature.Model;
-using Splitio.OpenFeature;
+using Splitio.OpenFeature.Provider;
 using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
 using System;
@@ -374,9 +374,9 @@ namespace ProviderTests
 
             Type type = typeof(Provider);
             FieldInfo privatePropertyInfo = type.GetField("_splitWrapper", BindingFlags.Instance | BindingFlags.NonPublic);
-            SplitOpenFeatureProvider.SplitWrapper splitwrapper = (SplitOpenFeatureProvider.SplitWrapper)privatePropertyInfo.GetValue(splitProvider);
+            Splitio.OpenFeature.Provider.SplitWrapper splitwrapper = (Splitio.OpenFeature.Provider.SplitWrapper)privatePropertyInfo.GetValue(splitProvider);
 
-            type = typeof(SplitOpenFeatureProvider.SplitWrapper);
+            type = typeof(Splitio.OpenFeature.Provider.SplitWrapper);
             FieldInfo splitClientProp = type.GetField("splitClient", BindingFlags.Instance | BindingFlags.NonPublic);
             splitClientProp.SetValue(splitwrapper, splitClient.Object);
 
@@ -429,9 +429,9 @@ namespace ProviderTests
 
             Type type = typeof(Provider);
             FieldInfo privatePropertyInfo = type.GetField("_splitWrapper", BindingFlags.Instance | BindingFlags.NonPublic);
-            SplitOpenFeatureProvider.SplitWrapper splitwrapper = (SplitOpenFeatureProvider.SplitWrapper)privatePropertyInfo.GetValue(splitProvider);
+            Splitio.OpenFeature.Provider.SplitWrapper splitwrapper = (Splitio.OpenFeature.Provider.SplitWrapper)privatePropertyInfo.GetValue(splitProvider);
 
-            type = typeof(SplitOpenFeatureProvider.SplitWrapper);
+            type = typeof(Splitio.OpenFeature.Provider.SplitWrapper);
             FieldInfo splitClientProp = type.GetField("splitClient", BindingFlags.Instance | BindingFlags.NonPublic);
             splitClientProp.SetValue(splitwrapper, splitClient.Object);
 

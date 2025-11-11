@@ -16,6 +16,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\SplitOpenFeatureProvider\SplitOpenFeatureProvider.csproj" />
+    <ProjectReference Include="..\Splitio.OpenFeature.Provider\Splitio.OpenFeature.Provider.csproj" />
   </ItemGroup>
 </Project>
