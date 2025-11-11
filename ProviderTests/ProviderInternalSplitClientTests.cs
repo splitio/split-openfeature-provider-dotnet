@@ -308,7 +308,7 @@ namespace ProviderTests
             var config2 = new ConfigurationOptions
             {
                 LocalhostFilePath = "../../../split.yaml",
-                // Logger = new CustomLogger()
+                 Logger = new CustomLogger()
             };
             Dictionary<string, object> initialContext2 = new Dictionary<string, object>();
             initialContext2.Add("ConfigOptions", config2);
