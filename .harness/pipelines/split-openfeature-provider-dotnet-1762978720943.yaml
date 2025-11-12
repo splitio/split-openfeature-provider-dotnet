@@ -30,9 +30,11 @@ pipeline:
                   identifier: Restore_Dependencies
                   spec:
                     shell: Powershell
-                    command: |
+                    command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet restore
+                      wget "https://builds.dotnet.microsoft.com/dotnet/Runtime/9.0.11/dotnet-runtime-9.0.11-win-x64.exe" -O .\net-rt.exe
+                      .\net-rt.exe
               - step:
                   type: Run
                   name: Build Solution
@@ -50,8 +52,6 @@ pipeline:
                     shell: Powershell
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
-                      wget "https://builds.dotnet.microsoft.com/dotnet/Runtime/9.0.11/dotnet-runtime-9.0.11-win-x64.exe" -O .\net-rt.exe
-                      .\net-rt.exe
                       dotnet build -c Release
                       dotnet test .\ProviderTests\ProviderTests.csproj -c Release -f net9.0 --no-build --collect:"XPlat Code Coverage;Format=opencover"
               - step:
