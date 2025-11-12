@@ -52,7 +52,7 @@ pipeline:
                     command: |-
                       export PATH="/usr/share/dotnet:$PATH"
                       dotnet build -c Release
-                      dotnet test .\ProviderTests\ProviderTests.csproj -c Release -f net9.0 --no-build --collect:"XPlat Code Coverage;Format=opencover"
+                      dotnet test ./ProviderTests/ProviderTests.csproj -c Release -f net9.0 --no-build --collect:"XPlat Code Coverage;Format=opencover"
               - step:
                   type: Run
                   name: Publish Artifacts
