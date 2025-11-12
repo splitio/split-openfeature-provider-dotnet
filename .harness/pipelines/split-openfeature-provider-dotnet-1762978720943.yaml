@@ -54,22 +54,13 @@ pipeline:
                       dotnet test .\ProviderTests\ProviderTests.csproj -c Release -f net9.0 --no-build --collect:"XPlat Code Coverage;Format=opencover"
               - step:
                   type: Run
-                  name: Publish Artifacts
+                  name: Create Artifacts
                   identifier: Publish_Artifacts
                   spec:
                     shell: Powershell
-                    command: |
+                    command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
-                      dotnet publish --configuration Release --no-build --output ./publish
-              - step:
-                  type: Run
-                  name: Package NuGet
-                  identifier: Package_NuGet
-                  spec:
-                    shell: Powershell
-                    command: |
-                      $env:PATH = "C:\dotnet;$env:PATH"
-                      dotnet pack --configuration Release --no-build --output ./packages
+                      dotnet pack .\Splitio.OpenFeature.Provider\Splitio.OpenFeature.Provider.csproj
           platform:
             os: Windows
             arch: Amd64
