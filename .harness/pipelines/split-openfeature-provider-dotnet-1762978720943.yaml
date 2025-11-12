@@ -5,8 +5,8 @@ pipeline:
   orgIdentifier: PROD
   stages:
     - stage:
-        name: Build
-        identifier: Build
+        name: Build and Test
+        identifier: Build_and_Test
         type: CI
         spec:
           cloneCodebase: true
@@ -14,11 +14,62 @@ pipeline:
             steps:
               - step:
                   type: Run
-                  name: Echo Welcome Message
-                  identifier: Echo_Welcome_Message
+                  name: Setup .NET SDK
+                  identifier: Setup_NET_SDK
                   spec:
                     shell: Sh
-                    command: echo "Welcome to Harness CI"
+                    command: |
+                      # Install .NET SDK (adjust version as needed)
+                      wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+                      chmod +x ./dotnet-install.sh
+                      ./dotnet-install.sh --version latest --install-dir /usr/share/dotnet
+                      export PATH="/usr/share/dotnet:$PATH"
+                      dotnet --version
+              - step:
+                  type: Run
+                  name: Restore Dependencies
+                  identifier: Restore_Dependencies
+                  spec:
+                    shell: Sh
+                    command: |
+                      export PATH="/usr/share/dotnet:$PATH"
+                      dotnet restore
+              - step:
+                  type: Run
+                  name: Build Solution
+                  identifier: Build_Solution
+                  spec:
+                    shell: Sh
+                    command: |
+                      export PATH="/usr/share/dotnet:$PATH"
+                      dotnet build --configuration Release --no-restore
+              - step:
+                  type: Run
+                  name: Run Unit Tests
+                  identifier: Run_Unit_Tests
+                  spec:
+                    shell: Sh
+                    command: |
+                      export PATH="/usr/share/dotnet:$PATH"
+                      dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+              - step:
+                  type: Run
+                  name: Publish Artifacts
+                  identifier: Publish_Artifacts
+                  spec:
+                    shell: Sh
+                    command: |
+                      export PATH="/usr/share/dotnet:$PATH"
+                      dotnet publish --configuration Release --no-build --output ./publish
+              - step:
+                  type: Run
+                  name: Package NuGet
+                  identifier: Package_NuGet
+                  spec:
+                    shell: Sh
+                    command: |
+                      export PATH="/usr/share/dotnet:$PATH"
+                      dotnet pack --configuration Release --no-build --output ./packages
           platform:
             os: Linux
             arch: Amd64
