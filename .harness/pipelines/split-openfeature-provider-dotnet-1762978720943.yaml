@@ -14,16 +14,18 @@ pipeline:
             steps:
               - step:
                   type: Run
-                  name: Setup .NET SDK
+                  name: Setup NET SDK
                   identifier: Setup_NET_SDK
                   spec:
                     shell: Powershell
-                    command: |
+                    command: |-
                       # Install .NET SDK (adjust version as needed)
                       Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "dotnet-install.ps1"
                       .\dotnet-install.ps1 -Version latest -InstallDir "C:\dotnet"
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet --version
+                      Invoke-WebRequest -Uri "https://builds.dotnet.microsoft.com/dotnet/Runtime/9.0.11/dotnet-runtime-9.0.11-win-x64.exe" -OutFile "net-rt.exe"
+                      .\net-rt.exe /quiet
               - step:
                   type: Run
                   name: Restore Dependencies
@@ -33,8 +35,6 @@ pipeline:
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet restore
-                      wget "https://builds.dotnet.microsoft.com/dotnet/Runtime/9.0.11/dotnet-runtime-9.0.11-win-x64.exe" -O .\net-rt.exe
-                      .\net-rt.exe /quiet
               - step:
                   type: Run
                   name: Build Solution
