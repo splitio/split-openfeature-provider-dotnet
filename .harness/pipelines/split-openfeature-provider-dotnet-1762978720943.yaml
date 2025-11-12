@@ -17,66 +17,66 @@ pipeline:
                   name: Setup .NET SDK
                   identifier: Setup_NET_SDK
                   spec:
-                    shell: Sh
+                    shell: Powershell
                     command: |
                       # Install .NET SDK (adjust version as needed)
-                      wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
-                      chmod +x ./dotnet-install.sh
-                      ./dotnet-install.sh --version latest --install-dir /usr/share/dotnet
-                      export PATH="/usr/share/dotnet:$PATH"
+                      Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "dotnet-install.ps1"
+                      .\dotnet-install.ps1 -Version latest -InstallDir "C:\dotnet"
+                      $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet --version
               - step:
                   type: Run
                   name: Restore Dependencies
                   identifier: Restore_Dependencies
                   spec:
-                    shell: Sh
+                    shell: Powershell
                     command: |
-                      export PATH="/usr/share/dotnet:$PATH"
+                      $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet restore
               - step:
                   type: Run
                   name: Build Solution
                   identifier: Build_Solution
                   spec:
-                    shell: Sh
+                    shell: Powershell
                     command: |
-                      export PATH="/usr/share/dotnet:$PATH"
+                      $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet build --configuration Release --no-restore
               - step:
                   type: Run
                   name: Run Unit Tests
                   identifier: Run_Unit_Tests
                   spec:
-                    shell: Sh
-                    command: |-
-                      export PATH="/usr/share/dotnet:$PATH"
+                    shell: Powershell
+                    command: |
+                      $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet build -c Release
-                      dotnet test ./ProviderTests/ProviderTests.csproj -c Release -f net9.0 --no-build --collect:"XPlat Code Coverage;Format=opencover"
+                      dotnet test .\ProviderTests\ProviderTests.csproj -c Release -f net9.0 --no-build --collect:"XPlat Code Coverage;Format=opencover"
               - step:
                   type: Run
                   name: Publish Artifacts
                   identifier: Publish_Artifacts
                   spec:
-                    shell: Sh
+                    shell: Powershell
                     command: |
-                      export PATH="/usr/share/dotnet:$PATH"
+                      $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet publish --configuration Release --no-build --output ./publish
               - step:
                   type: Run
                   name: Package NuGet
                   identifier: Package_NuGet
                   spec:
-                    shell: Sh
+                    shell: Powershell
                     command: |
-                      export PATH="/usr/share/dotnet:$PATH"
+                      $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet pack --configuration Release --no-build --output ./packages
           platform:
-            os: Linux
+            os: Windows
             arch: Amd64
           runtime:
             type: Cloud
             spec: {}
+        description: ""
   properties:
     ci:
       codebase:
