@@ -1,0 +1,33 @@
+pipeline:
+  name: Build split-openfeature-provider-dotnet
+  identifier: Build_split_openfeature_provider_dotnet_1762978727651
+  projectIdentifier: Harness_Split
+  orgIdentifier: PROD
+  stages:
+    - stage:
+        name: Build
+        identifier: Build
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Echo Welcome Message
+                  identifier: Echo_Welcome_Message
+                  spec:
+                    shell: Sh
+                    command: echo "Welcome to Harness CI"
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: githubdevops
+        repoName: split-openfeature-provider-dotnet
+        build: <+input>
