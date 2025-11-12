@@ -21,7 +21,7 @@ pipeline:
                     command: |-
                       # Install .NET SDK (adjust version as needed)
                       Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "dotnet-install.ps1"
-                      .\dotnet-install.ps1 -Version 9.0 -InstallDir "C:\dotnet"
+                      .\dotnet-install.ps1 -Channel 9.0 -InstallDir "C:\dotnet"
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet --version
               - step:
