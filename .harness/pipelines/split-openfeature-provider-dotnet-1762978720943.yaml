@@ -60,7 +60,16 @@ pipeline:
                     shell: Powershell
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
-                      dotnet pack .\Splitio.OpenFeature.Provider\Splitio.OpenFeature.Provider.csproj
+                      dotnet pack .\Splitio.OpenFeature.Provider\Splitio.OpenFeature.Provider.csproj --output .
+              - step:
+                  type: S3Upload
+                  name: upload nuget
+                  identifier: upload_nuget
+                  spec:
+                    connectorRef: artifacts
+                    region: us-east-1
+                    bucket: split-openfeature-provider-dotnet
+                    sourcePath: .\Splitio.OpenFeature.Provider.nupkg
           platform:
             os: Windows
             arch: Amd64
