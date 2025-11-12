@@ -49,9 +49,10 @@ pipeline:
                   identifier: Run_Unit_Tests
                   spec:
                     shell: Sh
-                    command: |
+                    command: |-
                       export PATH="/usr/share/dotnet:$PATH"
-                      dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+                      dotnet build -c Release
+                      dotnet test .\ProviderTests\ProviderTests.csproj -c Release -f net9.0 --no-build --collect:"XPlat Code Coverage;Format=opencover"
               - step:
                   type: Run
                   name: Publish Artifacts
