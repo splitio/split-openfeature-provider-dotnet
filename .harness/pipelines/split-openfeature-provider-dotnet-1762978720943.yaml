@@ -69,7 +69,7 @@ pipeline:
                     connectorRef: artifacts
                     region: us-east-1
                     bucket: split-openfeature-provider-dotnet
-                    sourcePath: .\Splitio.OpenFeature.Provider.nupkg
+                    sourcePath: C:\harness\Splitio.OpenFeature.Provider.2.0.0.nupkg
           platform:
             os: Windows
             arch: Amd64
