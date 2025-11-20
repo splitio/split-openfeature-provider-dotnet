@@ -57,7 +57,7 @@ pipeline:
                   name: Create and Upload Nuget
                   identifier: Run_6
                   spec:
-                    shell: Sh
+                    shell: Powershell
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
                       mkdir .\nuget
