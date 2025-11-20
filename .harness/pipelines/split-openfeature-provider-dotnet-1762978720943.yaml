@@ -54,19 +54,24 @@ pipeline:
                       dotnet test .\ProviderTests\ProviderTests.csproj -c Release -f net9.0 --no-build --collect:"XPlat Code Coverage;Format=opencover"
               - step:
                   type: Run
-                  name: Create Artifacts
-                  identifier: Publish_Artifacts
+                  name: Create and Upload Nuget
+                  identifier: Run_6
                   spec:
-                    shell: Powershell
+                    shell: Bash
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
                       mkdir .\nuget
                       dotnet pack .\Splitio.OpenFeature.Provider\Splitio.OpenFeature.Provider.csproj --output .\nuget
-              - step:
-                  type: Run
-                  name: Run_6
-                  identifier: Run_6
-                  spec: {}
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths:
+                          - ./nuget/*
+                    envVariables:
+                      HARNESS_HELM_BASE_URL: harness0.harness.io
+                      HARNESS_HELM_URL: oci://harness0.harness.io/oci/fme-helm
+                      HARNESS_HELM_USER: split-fme-infra@harness.io
+                      HARNESS_HELM_TOKEN: <+secrets.getValue("harness-helm-token")>
           platform:
             os: Windows
             arch: Amd64
