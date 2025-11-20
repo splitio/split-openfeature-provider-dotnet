@@ -62,6 +62,12 @@ pipeline:
                       $env:PATH = "C:\dotnet;$env:PATH"
                       mkdir .\nuget
                       dotnet pack .\Splitio.OpenFeature.Provider\Splitio.OpenFeature.Provider.csproj --output .\nuget
+                    privileged: false
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths:
+                          - "**/*.nupkg"
                     envVariables:
                       HARNESS_HELM_BASE_URL: harness0.harness.io
                       HARNESS_HELM_URL: oci://harness0.harness.io/oci/fme-helm
