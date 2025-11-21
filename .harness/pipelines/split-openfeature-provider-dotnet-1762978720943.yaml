@@ -68,7 +68,7 @@ pipeline:
                   identifier: upload_nuget_package
                   spec:
                     shell: Powershell
-                    command: ddotnet nuget push 'C:\harness\nuget\Splitio.OpenFeature.Provider.2.0.0.nupkg' -k $Env:API_KEY -s 'https://harness0.harness.io/pkg/l7B_kbSEQD2wjrM7PShm5w/fme-nuget/nuget/'
+                    command: dotnet nuget push 'C:\harness\nuget\Splitio.OpenFeature.Provider.2.0.0.nupkg' -k $Env:API_KEY -s 'https://harness0.harness.io/pkg/l7B_kbSEQD2wjrM7PShm5w/fme-nuget/nuget/'
                     envVariables:
                       API_KEY: <+secrets.getValue("harness-ci-nuget-token")>
           platform:
