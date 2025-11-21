@@ -71,6 +71,7 @@ pipeline:
                     command: |-
                       dotnet nuget add source https://harness0.harness.io/pkg/l7B_kbSEQD2wjrM7PShm5w/fme-nuget/nuget/index.json --name harness --username split-fme-infra@harness.io --password $HARNESS_HELM_TOKEN --store-password-in-clear-text
                       dotnet package add split-openfeature-net --version "2.0.0" --source harness
+                      ls C:\harness\nuget
                       dotnet nuget push C:\harness\nuget\Splitio.OpenFeature.Provider.2.0.0.nupkg --api-key $HARNESS_HELM_TOKEN --source harness
                     envVariables:
                       HARNESS_HELM_BASE_URL: harness0.harness.io
