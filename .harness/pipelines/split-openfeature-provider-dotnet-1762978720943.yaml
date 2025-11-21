@@ -69,7 +69,6 @@ pipeline:
                   spec:
                     shell: Powershell
                     command: |-
-                      $env:HARNESS_HELM_TOKEN = <+secrets.getValue("harness-helm-token")>
                       dotnet nuget add source https://harness0.harness.io/pkg/l7B_kbSEQD2wjrM7PShm5w/fme-nuget/nuget/index.json --name harness --username split-fme-infra@harness.io --password $HARNESS_HELM_TOKEN --store-password-in-clear-text
                       dotnet package add split-openfeature-net --version "2.0.0" --source harness
                       dotnet nuget push c:\harness\nuget\* --username $HARNESS_HELM_USER --password $HARNESS_HELM_TOKEN --source harness
