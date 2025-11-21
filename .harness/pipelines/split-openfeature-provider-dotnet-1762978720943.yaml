@@ -68,15 +68,9 @@ pipeline:
                   identifier: upload_nuget_package
                   spec:
                     shell: Powershell
-                    command: |-
-                      dotnet nuget add source https://harness0.harness.io/pkg/l7B_kbSEQD2wjrM7PShm5w/fme-nuget/nuget/index.json --name harness --username split-fme-infra@harness.io --password $HARNESS_HELM_TOKEN --store-password-in-clear-text
-                      dotnet --version
-                      dotnet add package Splitio.OpenFeature.Provider --version "2.0.0" --project C:\harness\Splitio.OpenFeature.Provider\Splitio.OpenFeature.Provider.csproj  --source harness
+                    command: ddotnet nuget push 'C:\harness\nuget\Splitio.OpenFeature.Provider.2.0.0.nupkg' -k $Env:API_KEY -s 'https://harness0.harness.io/pkg/l7B_kbSEQD2wjrM7PShm5w/fme-nuget/nuget/'
                     envVariables:
-                      HARNESS_HELM_BASE_URL: harness0.harness.io
-                      HARNESS_HELM_URL: oci://harness0.harness.io/oci/fme-helm
-                      HARNESS_HELM_USER: split-fme-infra@harness.io
-                      HARNESS_HELM_TOKEN: <+secrets.getValue("harness-helm-token")>
+                      API_KEY: <+secrets.getValue("harness-ci-nuget-token")>
           platform:
             os: Windows
             arch: Amd64
