@@ -41,7 +41,7 @@ pipeline:
                     shell: Powershell
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
-                      dotnet tool install --global dotnet-sonarscanner
+                      dotnet tool install --tool-path c:\dotnet -v diag dotnet-sonarscanner
                       dotnet tool list -g
                 contextType: Pipeline
               - step:
@@ -51,7 +51,7 @@ pipeline:
                   spec:
                     shell: Powershell
                     command: |-
-                      ls -s C:\dotnet | findstr "sonarscanner"
+                      ls C:\dotnet
                       $env:PATH = "C:\dotnet;C:\dotnet\tools;$env:PATH"
                       dotnet-sonarscanner begin `
                         /k:"split-openfeature-provider-dotnet" `
