@@ -36,6 +36,15 @@ pipeline:
                       dotnet tool list -g
               - step:
                   type: Run
+                  name: Restore Dependencies
+                  identifier: Restore_Dependencies
+                  spec:
+                    shell: Powershell
+                    command: |-
+                      $env:PATH = "C:\dotnet;$env:PATH"
+                      dotnet restore
+              - step:
+                  type: Run
                   name: SonarQube Begin Analysis
                   identifier: SonarQube_Begin_Analysis
                   spec:
@@ -50,15 +59,7 @@ pipeline:
                         /d:sonar.coverage.exclusions="**/*Tests*/**,**/bin/**,**/obj/**" `
                         /d:sonar.exclusions="**/bin/**,**/obj/**,**/*.dll,**/*.pdb" `
                         /d:sonar.sourceEncoding="UTF-8"
-              - step:
-                  type: Run
-                  name: Restore Dependencies
-                  identifier: Restore_Dependencies
-                  spec:
-                    shell: Powershell
-                    command: |-
-                      $env:PATH = "C:\dotnet;$env:PATH"
-                      dotnet restore
+                contextType: Pipeline
               - step:
                   type: Run
                   name: Build Solution
