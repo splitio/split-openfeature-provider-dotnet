@@ -26,6 +26,32 @@ pipeline:
                       dotnet --version
               - step:
                   type: Run
+                  name: Install SonarQube Scanner
+                  identifier: Install_SonarQube_Scanner
+                  spec:
+                    shell: Powershell
+                    command: |-
+                      $env:PATH = "C:\dotnet;$env:PATH"
+                      dotnet tool install --global dotnet-sonarscanner
+                      dotnet tool list -g
+              - step:
+                  type: Run
+                  name: SonarQube Begin Analysis
+                  identifier: SonarQube_Begin_Analysis
+                  spec:
+                    shell: Powershell
+                    command: |-
+                      $env:PATH = "C:\dotnet;$env:PATH"
+                      dotnet sonarscanner begin `
+                        /k:"split-openfeature-provider-dotnet" `
+                        /d:sonar.host.url="https://sonar.harness.io/" `
+                        /d:sonar.token="<+secrets.getValue("sonarqube-token")>" `
+                        /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" `
+                        /d:sonar.coverage.exclusions="**/*Tests*/**,**/bin/**,**/obj/**" `
+                        /d:sonar.exclusions="**/bin/**,**/obj/**,**/*.dll,**/*.pdb" `
+                        /d:sonar.sourceEncoding="UTF-8"
+              - step:
+                  type: Run
                   name: Restore Dependencies
                   identifier: Restore_Dependencies
                   spec:
@@ -39,36 +65,33 @@ pipeline:
                   identifier: Build_Solution
                   spec:
                     shell: Powershell
-                    command: |
+                    command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet build --configuration Release --no-restore
               - step:
                   type: Run
-                  name: Run Unit Tests
+                  name: Run Unit Tests with Coverage
                   identifier: Run_Unit_Tests
                   spec:
                     shell: Powershell
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
-                      dotnet build -c Release
-                      dotnet test .\ProviderTests\ProviderTests.csproj -c Release -f net9.0 --no-build --collect:"XPlat Code Coverage;Format=opencover"
+                      dotnet test .\ProviderTests\ProviderTests.csproj `
+                        -c Release `
+                        -f net9.0 `
+                        --no-build `
+                        --collect:"XPlat Code Coverage" `
+                        --results-directory:"./TestResults" `
+                        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
               - step:
-                  type: Sonarqube
-                  name: Sonarqube
-                  identifier: Sonarqube
+                  type: Run
+                  name: SonarQube End Analysis
+                  identifier: SonarQube_End_Analysis
                   spec:
-                    mode: orchestration
-                    config: default
-                    target:
-                      type: repository
-                      detection: auto
-                    advanced:
-                      log:
-                        level: info
-                    auth:
-                      access_token: <+secrets.getValue("sonarqube-token")>
-                      domain: " https://sonar.harness.io/"
-                      ssl: true
+                    shell: Powershell
+                    command: |-
+                      $env:PATH = "C:\dotnet;$env:PATH"
+                      dotnet sonarscanner end /d:sonar.token="<+secrets.getValue("sonarqube-token")>"
               - step:
                   type: Run
                   name: Create Nuget
@@ -77,15 +100,17 @@ pipeline:
                     shell: Powershell
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
-                      mkdir .\nuget
-                      dotnet pack .\Splitio.OpenFeature.Provider\Splitio.OpenFeature.Provider.csproj --output .\nuget
+                      if (!(Test-Path ".\nuget")) { mkdir .\nuget }
+                      dotnet pack .\Splitio.OpenFeature.Provider\Splitio.OpenFeature.Provider.csproj --output .\nuget --configuration Release
               - step:
                   type: Run
                   name: Upload Nuget package
                   identifier: upload_nuget_package
                   spec:
                     shell: Powershell
-                    command: dotnet nuget push 'C:\harness\nuget\*.nupkg' -k $Env:API_KEY -s 'https://harness0.harness.io/pkg/l7B_kbSEQD2wjrM7PShm5w/fme-nuget/nuget/'
+                    command: |-
+                      $env:PATH = "C:\dotnet;$env:PATH"
+                      dotnet nuget push '.\nuget\*.nupkg' -k $Env:API_KEY -s 'https://harness0.harness.io/pkg/l7B_kbSEQD2wjrM7PShm5w/fme-nuget/nuget/'
                     envVariables:
                       API_KEY: <+secrets.getValue("harness-ci-nuget-token")>
           platform:
