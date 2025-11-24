@@ -51,7 +51,7 @@ pipeline:
                   spec:
                     shell: Powershell
                     command: |-
-                      ls -s C:\
+                      ls -s C:\dotnet | findstr "sonarscanner"
                       $env:PATH = "C:\dotnet;C:\dotnet\tools;$env:PATH"
                       dotnet sonarscanner begin `
                         /k:"split-openfeature-provider-dotnet" `
