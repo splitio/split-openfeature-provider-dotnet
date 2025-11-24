@@ -26,16 +26,6 @@ pipeline:
                       dotnet --version
               - step:
                   type: Run
-                  name: Install SonarQube Scanner
-                  identifier: Install_SonarQube_Scanner
-                  spec:
-                    shell: Powershell
-                    command: |-
-                      $env:PATH = "C:\dotnet;$env:PATH"
-                      dotnet tool install --global dotnet-sonarscanner
-                      dotnet tool list -g
-              - step:
-                  type: Run
                   name: Restore Dependencies
                   identifier: Restore_Dependencies
                   spec:
@@ -45,13 +35,24 @@ pipeline:
                       dotnet restore
               - step:
                   type: Run
+                  name: Install SonarQube Scanner
+                  identifier: Install_SonarQube_Scanner
+                  spec:
+                    shell: Powershell
+                    command: |-
+                      $env:PATH = "C:\dotnet;$env:PATH"
+                      dotnet tool install --global dotnet-sonarscanner
+                      dotnet tool list -g
+                contextType: Pipeline
+              - step:
+                  type: Run
                   name: SonarQube Begin Analysis
                   identifier: SonarQube_Begin_Analysis
                   spec:
                     shell: Powershell
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
-                      dotnet-sonarscanner begin `
+                      dotnet sonarscanner begin `
                         /k:"split-openfeature-provider-dotnet" `
                         /d:sonar.host.url="https://sonar.harness.io/" `
                         /d:sonar.token="<+secrets.getValue("sonarqube-token")>" `
