@@ -34,25 +34,6 @@ pipeline:
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet restore
               - step:
-                  type: Snyk
-                  name: SCA Scan with Snyk
-                  identifier: sca_snyk_scan
-                  spec:
-                    mode: orchestration
-                    config: default
-                    target:
-                      name: split-openfeature-provider-dotnet
-                      type: repository
-                      variant: main
-                    advanced:
-                      log:
-                        level: info
-                    tool:
-                      type: Snyk
-                    settings:
-                      product_name: code
-                      product_config_name: snyk-dotnet
-              - step:
                   type: Run
                   name: Install SonarQube Scanner
                   identifier: Install_SonarQube_Scanner
