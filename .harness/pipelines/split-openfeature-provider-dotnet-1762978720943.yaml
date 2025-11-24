@@ -53,7 +53,7 @@ pipeline:
                     command: |-
                       ls -s C:\dotnet | findstr "sonarscanner"
                       $env:PATH = "C:\dotnet;C:\dotnet\tools;$env:PATH"
-                      dotnet sonarscanner begin `
+                      dotnet-sonarscanner begin `
                         /k:"split-openfeature-provider-dotnet" `
                         /d:sonar.host.url="https://sonar.harness.io/" `
                         /d:sonar.token="<+secrets.getValue("sonarqube-token")>" `
