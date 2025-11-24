@@ -34,6 +34,41 @@ pipeline:
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet restore
               - step:
+                  type: Semgrep
+                  name: SAST Scan with Semgrep
+                  identifier: sast_semgrep_scan
+                  spec:
+                    mode: orchestration
+                    config: default
+                    target:
+                      name: split-openfeature-provider-dotnet
+                      type: repository
+                      variant: main
+                    advanced:
+                      log:
+                        level: info
+                    tool:
+                      type: Semgrep
+              - step:
+                  type: Snyk
+                  name: SCA Scan with Snyk
+                  identifier: sca_snyk_scan
+                  spec:
+                    mode: orchestration
+                    config: default
+                    target:
+                      name: split-openfeature-provider-dotnet
+                      type: repository
+                      variant: main
+                    advanced:
+                      log:
+                        level: info
+                    tool:
+                      type: Snyk
+                    settings:
+                      product_name: code
+                      product_config_name: snyk-dotnet
+              - step:
                   type: Run
                   name: Install SonarQube Scanner
                   identifier: Install_SonarQube_Scanner
@@ -95,19 +130,6 @@ pipeline:
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet sonarscanner end /d:sonar.token="<+secrets.getValue("sonarqube-token")>"
-              - step:
-                  type: Semgrep
-                  name: Semgrep security scanner
-                  identifier: Semgrep_security_scanner
-                  spec:
-                    mode: orchestration
-                    config: default
-                    target:
-                      type: repository
-                      detection: auto
-                    advanced:
-                      log:
-                        level: info
               - step:
                   type: Run
                   name: Create Nuget
