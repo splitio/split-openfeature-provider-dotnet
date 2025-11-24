@@ -43,6 +43,7 @@ pipeline:
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet restore
+                      dotnet tool install --global dotnet-sonarscanner
               - step:
                   type: Run
                   name: SonarQube Begin Analysis
