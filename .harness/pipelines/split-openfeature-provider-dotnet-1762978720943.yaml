@@ -96,6 +96,19 @@ pipeline:
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet sonarscanner end /d:sonar.token="<+secrets.getValue("sonarqube-token")>"
               - step:
+                  type: Semgrep
+                  name: Semgrep security scanner
+                  identifier: Semgrep_security_scanner
+                  spec:
+                    mode: orchestration
+                    config: default
+                    target:
+                      type: repository
+                      detection: auto
+                    advanced:
+                      log:
+                        level: info
+              - step:
                   type: Run
                   name: Create Nuget
                   identifier: create_nuget
