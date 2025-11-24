@@ -51,7 +51,8 @@ pipeline:
                   spec:
                     shell: Powershell
                     command: |-
-                      $env:PATH = "C:\dotnet;$env:PATH"
+                      ls -s C:\dotnet 
+                      $env:PATH = "C:\dotnet;C:\dotnet\tools;$env:PATH"
                       dotnet sonarscanner begin `
                         /k:"split-openfeature-provider-dotnet" `
                         /d:sonar.host.url="https://sonar.harness.io/" `
