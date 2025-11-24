@@ -53,6 +53,23 @@ pipeline:
                       dotnet build -c Release
                       dotnet test .\ProviderTests\ProviderTests.csproj -c Release -f net9.0 --no-build --collect:"XPlat Code Coverage;Format=opencover"
               - step:
+                  type: Sonarqube
+                  name: Sonarqube
+                  identifier: Sonarqube
+                  spec:
+                    mode: orchestration
+                    config: default
+                    target:
+                      type: repository
+                      detection: auto
+                    advanced:
+                      log:
+                        level: info
+                    auth:
+                      access_token: <+secrets.getValue("sonarqube-token")>
+                      domain: " https://sonar.harness.io/"
+                      ssl: true
+              - step:
                   type: Run
                   name: Create Nuget
                   identifier: create_nuget
