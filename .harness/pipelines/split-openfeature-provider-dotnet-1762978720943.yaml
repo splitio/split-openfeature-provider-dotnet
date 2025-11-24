@@ -51,8 +51,7 @@ pipeline:
                     shell: Powershell
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
-                      dotnet tool install --global dotnet-sonarscanner
-                      dotnet sonarscanner begin `
+                      dotnet-sonarscanner begin `
                         /k:"split-openfeature-provider-dotnet" `
                         /d:sonar.host.url="https://sonar.harness.io/" `
                         /d:sonar.token="<+secrets.getValue("sonarqube-token")>" `
