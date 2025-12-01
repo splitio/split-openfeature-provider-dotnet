@@ -97,6 +97,18 @@ pipeline:
                       dotnet sonarscanner end /d:sonar.token="<+secrets.getValue("sonarqube-token")>"
               - step:
                   type: Run
+                  name: Run Tests Net462
+                  identifier: Run_Tests_Net462
+                  spec:
+                    shell: Sh
+                    command: |-
+                      $env:PATH = "C:\dotnet;$env:PATH"
+                      dotnet test .\ProviderTests\ProviderTests.csproj `
+                        -c Release `
+                        -f net462 `
+                        --no-build `
+              - step:
+                  type: Run
                   name: Create Nuget
                   identifier: create_nuget
                   spec:
