@@ -1,4 +1,5 @@
 # Split OpenFeature Provider for .NET
+[![Harness CI](https://img.shields.io/badge/Harness%20CI-Build-blue)](https://app.harness.io/ng/account/l7B_kbSEQD2wjrM7PShm5w/module/ci/orgs/PROD/projects/Harness_Split/pipelines/Build_split_openfeature_provider_dotnet_1762978727651)
 [![Twitter Follow](https://img.shields.io/twitter/follow/splitsoftware.svg?style=social&label=Follow&maxAge=1529000)](https://twitter.com/intent/follow?screen_name=splitsoftware)
 
 ## Overview
