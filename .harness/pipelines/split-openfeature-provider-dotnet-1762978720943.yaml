@@ -100,7 +100,7 @@ pipeline:
                   name: Run Tests Net462
                   identifier: Run_Tests_Net462
                   spec:
-                    shell: Sh
+                    shell: Powershell
                     command: |-
                       $env:PATH = "C:\dotnet;$env:PATH"
                       dotnet test .\ProviderTests\ProviderTests.csproj `
