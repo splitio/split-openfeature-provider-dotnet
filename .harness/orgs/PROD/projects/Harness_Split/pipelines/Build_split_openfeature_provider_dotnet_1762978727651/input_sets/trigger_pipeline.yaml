@@ -1,6 +1,6 @@
 inputSet:
-  name: Build_split_openfeature_provider_dotnet_1762978727651-pr-trigger-input-set
-  identifier: Build_split_openfeature_provider_dotnet_1762978727651prtriggerinputset
+  name: trigger_pipeline
+  identifier: trigger_pipeline
   orgIdentifier: PROD
   projectIdentifier: Harness_Split
   pipeline:
