@@ -1,0 +1,14 @@
+inputSet:
+  name: trigger_pipeline
+  identifier: trigger_pipeline
+  orgIdentifier: PROD
+  projectIdentifier: Harness_Split
+  pipeline:
+    identifier: Build_split_openfeature_provider_dotnet_1762978727651
+    properties:
+      ci:
+        codebase:
+          build:
+            type: PR
+            spec:
+              number: <+trigger.prNumber>
