@@ -1,0 +1,14 @@
+inputSet:
+  name: "PR "
+  identifier: PR
+  orgIdentifier: PROD
+  projectIdentifier: Harness_Split
+  pipeline:
+    identifier: splitopenfeatureproviderdotnet
+    properties:
+      ci:
+        codebase:
+          build:
+            type: PR
+            spec:
+              number: <+trigger.prNumber>
