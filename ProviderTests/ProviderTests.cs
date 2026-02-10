@@ -45,9 +45,16 @@ namespace ProviderTests
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException), "Missing SplitClient instance or SDK ApiKey")]
-        public async Task InitializeWithNullTest()
+        public async Task InitializeWithNullDictionaryTest()
         {
-            await Api.Instance.SetProviderAsync(new Provider(null));
+            await Api.Instance.SetProviderAsync(new Provider(null as Dictionary<string, object>));
+        }
+        
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException), "Missing SplitClient instance or SDK ApiKey")]
+        public async Task InitializeWithNullProviderOptionsTest()
+        {
+            await Api.Instance.SetProviderAsync(new Provider(null as ProviderOptions));
         }
 
         [TestMethod]
@@ -468,6 +475,42 @@ namespace ProviderTests
             catch (Exception) { }
             Assert.AreEqual(0, splitClient.Invocations.Count);
         }
+        
+        [TestMethod]
+        public async Task ProviderConstructorWithOptionsIncludesConfiguration()
+        {
+            // arrange
+            var configuration = new ConfigurationOptions();
+            var options = new ProviderOptions(
+                "test-sdk-key",
+                configuration,
+                1234);
+
+            // act
+            await Api.Instance.SetProviderAsync(new Provider(options));
+            var featureClient = Api.Instance.GetClient();
+
+            // assert
+            Assert.IsNotNull(featureClient);
+        }
+        
+        [TestMethod]
+        public async Task ProviderConstructorWithOptionsWithoutConfigurationUsesDefaults()
+        {
+            // arrange
+            var options = new ProviderOptions(
+                "test-sdk-key",
+                null,
+                10000);
+
+            // act
+            await Api.Instance.SetProviderAsync(new Provider(options));
+            var featureClient = OpenFeature.Api.Instance.GetClient();
+
+            // assert
+            Assert.IsNotNull(featureClient);
+        }
+
 
         private static bool StructuresMatch(Structure s1, Structure s2)
         {

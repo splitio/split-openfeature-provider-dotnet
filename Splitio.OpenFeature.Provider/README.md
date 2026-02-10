@@ -14,18 +14,18 @@ Below is a simple example that describes the instantiation of the Split Provider
 using OpenFeature;
 using Splitio.OpenFeature;
 
-Dictionary<string, object> initialContext = new Dictionary<string, object>();
-var config = new ConfigurationOptions
-{
-    Logger = new CustomLogger()
-};
-initialContext.Add("ConfigOptions", config);
-initialContext.Add("SdkKey", "SPLIT SDK API KEY");
-initialContext.Add("ReadyBlockTime", 5000);
+var options = new ProviderOptions(
+    sdkKey: "SPLIT SDK API KEY",
+    configuration: new ConfigurationOptions
+    {
+        Logger = new CustomLogger()
+    },
+    readyBlockTime: 5000
+);
 
 Api api = OpenFeature.Api.Instance;
 
-api.setProviderAsync(new Provider(initialContext));
+api.setProviderAsync(new Provider(options));
 ```
 
 If you are more familiar with Split or want access to other initialization options, you can provide a `Split Client` to the constructor. See the [Split .NET Documentation](https://help.split.io/hc/en-us/articles/360020240172--NET-SDK) for more information.

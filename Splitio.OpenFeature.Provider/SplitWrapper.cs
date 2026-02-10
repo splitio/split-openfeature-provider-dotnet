@@ -16,7 +16,7 @@ namespace Splitio.OpenFeature.Provider
             this.splitClient = splitClient;
         }
 
-        public SplitWrapper(string SdkKey, ConfigurationOptions Configs, int ReadyBlockTime=10000) 
+        public SplitWrapper(string SdkKey, ConfigurationOptions Configs, int ReadyBlockTime=Constants.DefaultReadyBlockTime) 
         {
             var factory = new SplitFactory(SdkKey, Configs);
             _log = WrapperAdapter.Instance().GetLogger(typeof(SplitWrapper));

@@ -37,6 +37,11 @@ namespace Splitio.OpenFeature.Provider
             _splitWrapper = CreateSplitWrapper(initialContext);
             _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
         }
+        
+        public Provider(ProviderOptions options)
+            : this(ToInitialContext(options))
+        {
+        }
 
         public override Metadata GetMetadata() => _metadata;
 
@@ -314,6 +319,24 @@ namespace Splitio.OpenFeature.Provider
             }
 
             return true;
+        }
+        
+        private static Dictionary<string, object> ToInitialContext(ProviderOptions options)
+        {
+            var initialContext = new Dictionary<string, object>();
+
+            if (options != null)
+            {
+                initialContext[Constants.SdkApiKey] = options.SdkKey;
+                initialContext[Constants.ReadyBlockTime] = options.ReadyBlockTime;
+            }
+
+            if (options?.Configuration != null)
+            {
+                initialContext[Constants.ConfigKey] =  options.Configuration;
+            }
+
+            return initialContext;
         }
     }
 }

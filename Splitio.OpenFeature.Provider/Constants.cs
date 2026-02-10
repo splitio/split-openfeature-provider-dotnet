@@ -9,6 +9,6 @@
         public const string ConfigKey = "ConfigOptions";
         public const string TrafficType = "trafficType";
         public const string ReadyBlockTime = "ReadyBlockTime";
-
+        public const int DefaultReadyBlockTime = 10000;
     }
 }
