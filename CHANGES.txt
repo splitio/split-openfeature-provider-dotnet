@@ -1,5 +1,9 @@
 CHANGES
 
+2.0.1 (Feb 11, 2025)
+- Added Provider constructor that accepts API key (string) for simple SDK initialization
+- Added Provider constructor that accepts ISplitClient for dependency injection
+
 2.0.0 (Nov 11, 2025)
 - BREAKING CHANGE: Passing the SplitClient object to Provider constructor is now only through the initialization context dictionary
 - BREAKING CHANGE: Provider will throw exception when ObjectDetail and ObjectValue evaluation is used, since it will attempt to parse the treatment as a JSON structure.
