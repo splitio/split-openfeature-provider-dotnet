@@ -63,7 +63,7 @@ public static class Program
         Console.WriteLine("=== Example 2: Provider with injected ISplitClient ===");
         Console.WriteLine("Creating SplitFactory and client, then Provider(splitClient)...");
 
-        var config = new ConfigurationOptions()};
+        var config = new ConfigurationOptions();
 
         var factory = new SplitFactory(apiKey, config);
         ISplitClient splitClient = factory.Client();
