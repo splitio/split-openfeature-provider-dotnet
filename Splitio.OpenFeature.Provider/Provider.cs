@@ -7,7 +7,6 @@ using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
 using Splitio.Services.Logger;
 using Splitio.Services.Shared.Classes;
-using Splitio.OpenFeature.Provider;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +21,48 @@ namespace Splitio.OpenFeature.Provider
         private readonly SplitWrapper _splitWrapper;
         protected readonly ISplitLogger _log;
 
+        /// <summary>
+        /// Creates a Split OpenFeature provider using an SDK API key.
+        /// The SDK will be initialized with default configuration and will block until ready (10 seconds timeout).
+        /// </summary>
+        /// <param name="apiKey">Your Split SDK API key.</param>
+        /// <exception cref="ArgumentException">Thrown when apiKey is null or empty.</exception>
+        public Provider(string apiKey)
+        {
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new ArgumentException("API key cannot be null or empty", nameof(apiKey));
+            }
+
+            _splitWrapper = new SplitWrapper(apiKey, new ConfigurationOptions());
+            _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
+        }
+
+        /// <summary>
+        /// Creates a Split OpenFeature provider using an existing ISplitClient instance.
+        /// Use this when you need full control over SDK configuration (e.g. BlockUntilReadyTimeout, feature refresh, etc.).
+        /// The client is assumed to be ready; the caller is responsible for initializing it.
+        /// </summary>
+        /// <param name="splitClient">An already-instantiated Split client.</param>
+        /// <exception cref="ArgumentNullException">Thrown when splitClient is null.</exception>
+        public Provider(ISplitClient splitClient)
+        {
+            if (splitClient == null)
+            {
+                throw new ArgumentNullException(nameof(splitClient));
+            }
+
+            _splitWrapper = new SplitWrapper(splitClient);
+            _log = WrapperAdapter.Instance().GetLogger(typeof(Provider));
+        }
+
+        /// <summary>
+        /// Creates a Split OpenFeature provider from an initial context dictionary.
+        /// Supports "SdkKey" (string) for API key initialization, or "SplitClient" (ISplitClient) for injection.
+        /// Optional: "ConfigOptions" (ConfigurationOptions), "ReadyBlockTime" (int) for SDK initialization.
+        /// </summary>
+        /// <param name="initialContext">Dictionary containing either SdkKey or SplitClient, and optional config.</param>
+        /// <exception cref="ArgumentException">Thrown when context is null or missing both SdkKey and SplitClient, or when API key is null or empty.</exception>
         public Provider(Dictionary<string, object> initialContext)
         {
             ValidateInitialContext(initialContext);
@@ -42,7 +83,7 @@ namespace Splitio.OpenFeature.Provider
 
         public override Task ShutdownAsync(CancellationToken cancellationToken = default)
         {
-            _splitWrapper.getSplitClient().Destroy();
+            _splitWrapper.GetSplitClient().Destroy();
             return Task.CompletedTask;
         }
 
@@ -93,7 +134,7 @@ namespace Splitio.OpenFeature.Provider
                 attributes = trackingEventDetails.AsDictionary().ToDictionary(x => x.Key, x => x.Value.AsObject);
             }
 
-            _splitWrapper.getSplitClient().Track(
+            _splitWrapper.GetSplitClient().Track(
                 key,
                 evaluationContext.GetValue(Constants.TrafficType).AsString,
                 trackingEventName,
@@ -155,7 +196,7 @@ namespace Splitio.OpenFeature.Provider
                 return Task.FromResult(KeyNotFound<T>(flagKey, defaultValue));
             }
 
-            SplitResult structureResult = _splitWrapper.getSplitClient().GetTreatmentWithConfig(key, flagKey, TransformContext(context));
+            SplitResult structureResult = _splitWrapper.GetSplitClient().GetTreatmentWithConfig(key, flagKey, TransformContext(context));
             var originalResult = structureResult.Treatment;
 
             if (originalResult == Constants.CONTROL)
