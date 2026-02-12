@@ -1,38 +1,55 @@
 # Split OpenFeature Provider for .NET
 [![Twitter Follow](https://img.shields.io/twitter/follow/splitsoftware.svg?style=social&label=Follow&maxAge=1529000)](https://twitter.com/intent/follow?screen_name=splitsoftware)
 
-## Overview 
+## Overview
 This Provider is designed to allow the use of OpenFeature with Split, the platform for controlled rollouts, serving features to your users via the Split feature flag to manage your complete customer experience.
 
 ## Compatibility
 This SDK is compatible with .NET 6.0 and higher.
 
 ## Getting started
-Below is a simple example that describes the instantiation of the Split Provider. Please see the [OpenFeature Documentation](https://docs.openfeature.dev/docs/reference/concepts/evaluation-api) for details on how to use the OpenFeature SDK.
 
-```c#
+### Add the package to your project
+
+Add the [Split OpenFeature Provider](https://www.nuget.org/packages/Splitio.OpenFeature.Provider) NuGet package to your project.
+
+### Configure the provider
+
+You can create the Split Provider in two ways:
+
+**Option 1 – Using your SDK API key** (simplest; the SDK is created internally with default configuration and blocks until ready for up to 10 seconds):
+
+```csharp
 using OpenFeature;
 using Splitio.OpenFeature.Provider;
 
-Api api = OpenFeature.Api.Instance;
-api.setProviderAsync(new Provider("YOUR_API_KEY"));
+await Api.Instance.SetProviderAsync(new Provider("YOUR_API_KEY"));
 ```
 
-If you are more familiar with Split or want access to other initialization options, you can provide a `Split Client` to the constructor. See the [Split .NET Documentation](https://help.split.io/hc/en-us/articles/360020240172--NET-SDK) for more information.
-```c#
+**Option 2 – Using an existing `ISplitClient`** (when you need full control over the Split .NET SDK, e.g. feature refresh, logger). See the [Split .NET SDK documentation](https://developer.harness.io/docs/feature-management-experimentation/sdks-and-infrastructure/server-side-sdks/net-sdk) for how to build and configure the client. The client is assumed to be ready; call `BlockUntilReady(timeoutMs)` on the client before passing it to the provider if you need to wait for initialization.
+
+```csharp
 using OpenFeature;
 using Splitio.OpenFeature.Provider;
-using Splitio.Services.Client.Classes
+using Splitio.Services.Client.Classes;
+using Splitio.Services.Client.Interfaces;
 
-Api api = OpenFeature.Api.Instance;
-
-var config = new ConfigurationOptions
-{
-   Ready = 10000
-};
+var config = new ConfigurationOptions();
 var splitClient = new SplitFactory("YOUR_API_KEY", config).Client();
-api.SetProviderAsync(new Provider(splitClient));
+
+try
+{
+    splitClient.BlockUntilReady(10000); // wait up to 10 seconds for SDK to be ready
+}
+catch (Exception ex)
+{
+    // log & handle
+}
+
+await Api.Instance.SetProviderAsync(new Provider(splitClient));
 ```
+
+Please see the [OpenFeature Documentation](https://docs.openfeature.dev/docs/reference/concepts/evaluation-api) for details on how to use the OpenFeature SDK.
 
 ## Use of OpenFeature with Split
 After the initial setup you can use OpenFeature according to their [documentation](https://docs.openfeature.dev/docs/reference/concepts/evaluation-api/).
@@ -45,14 +62,16 @@ var result = await client.GetBooleanValueAsync("boolFlag", false, context);
 If the same targeting key is used repeatedly, the evaluation context may be set at the client level 
 ```csharp
 var context = EvaluationContext.Builder().Set("targetingKey", "randomKey").Build();
-client.SetContext(context)
+client.SetContext(context);
 ```
-or at the OpenFeatureAPI level 
+or at the API level:
+
 ```csharp
 var context = EvaluationContext.Builder().Set("targetingKey", "randomKey").Build();
-api.setEvaluationContext(context)
-````
-If the context was set at the client or api level, it is not required to provide it during flag evaluation.
+Api.Instance.SetEvaluationContext(context);
+```
+
+If the context was set at the client or API level, it is not required to provide it during flag evaluation.
 
 ## Submitting issues
  
