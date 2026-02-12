@@ -4,7 +4,6 @@ using Splitio.Services.Client.Interfaces;
 using Splitio.OpenFeature.Provider;
 using System;
 using System.IO;
-using System.Text;
 using System.Threading;
 
 namespace ProviderTests
@@ -22,9 +21,9 @@ namespace ProviderTests
             };
             SplitWrapper splitWrapper = new SplitWrapper("localhost", config);
             Assert.IsNotNull(splitWrapper);
-            Assert.IsNotNull(splitWrapper.getSplitClient());
+            Assert.IsNotNull(splitWrapper.GetSplitClient());
             Assert.IsTrue(splitWrapper.IsSDKReady());
-            splitWrapper.getSplitClient().Destroy();
+            splitWrapper.GetSplitClient().Destroy();
         }
 
         [TestMethod]
@@ -45,9 +44,9 @@ namespace ProviderTests
 
             SplitWrapper splitWrapper = new SplitWrapper(splitClient);
             Assert.IsNotNull(splitWrapper);
-            Assert.AreEqual(splitClient, splitWrapper.getSplitClient());
+            Assert.AreEqual(splitClient, splitWrapper.GetSplitClient());
             Assert.IsTrue(splitWrapper.IsSDKReady());
-            splitWrapper.getSplitClient().Destroy();
+            splitWrapper.GetSplitClient().Destroy();
         }
 
         [TestMethod]
@@ -69,7 +68,7 @@ namespace ProviderTests
             Assert.IsNotNull(splitWrapper);
             Assert.IsFalse(splitWrapper.IsSDKReady());
 
-            splitWrapper.getSplitClient().Destroy();
+            splitWrapper.GetSplitClient().Destroy();
         }
     }
 }

@@ -16,23 +16,23 @@ namespace Splitio.OpenFeature.Provider
             this.splitClient = splitClient;
         }
 
-        public SplitWrapper(string SdkKey, ConfigurationOptions Configs, int ReadyBlockTime=10000) 
+        public SplitWrapper(string sdkKey, ConfigurationOptions configs, int readyBlockTime=10000) 
         {
-            var factory = new SplitFactory(SdkKey, Configs);
+            var factory = new SplitFactory(sdkKey, configs);
             _log = WrapperAdapter.Instance().GetLogger(typeof(SplitWrapper));
             splitClient = (SplitClient)factory.Client();
             try
             {
-                splitClient.BlockUntilReady(ReadyBlockTime);
+                splitClient.BlockUntilReady(readyBlockTime);
                 SDKReady = true;
             }
             catch (Exception)
             {
-                LogIfNotNull($"Split SDK Not ready within {ReadyBlockTime} ms!");
+                LogIfNotNull($"Split SDK Not ready within {readyBlockTime} ms!");
             }
         }
 
-        public ISplitClient getSplitClient() 
+        public ISplitClient GetSplitClient() 
         { 
             return splitClient; 
         }

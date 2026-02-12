@@ -29,8 +29,10 @@ namespace ProviderTests
                 LocalhostFilePath = "../../../split.yaml",
                  Logger = new CustomLogger()
             };
+
             var factory = new SplitFactory("localhost", config);
             sdk = factory.Client();
+
             try
             {
                 sdk.BlockUntilReady(10000);
@@ -40,6 +42,7 @@ namespace ProviderTests
                 Console.WriteLine($"Exception initializing Split client! {ex}");
                 throw;
             }
+
             initialContext.Add("SplitClient", sdk);
         }
 
@@ -47,7 +50,7 @@ namespace ProviderTests
         [ExpectedException(typeof(ArgumentException), "Missing SplitClient instance or SDK ApiKey")]
         public async Task InitializeWithNullTest()
         {
-            await Api.Instance.SetProviderAsync(new Provider(null));
+            await Api.Instance.SetProviderAsync(new Provider((string)null));
         }
 
         [TestMethod]
@@ -63,7 +66,7 @@ namespace ProviderTests
         public async Task UseDefaultTest()
         {
             await Api.Instance.SetProviderAsync(new Provider(initialContext));
-            client = OpenFeature.Api.Instance.GetClient();
+            client = Api.Instance.GetClient();
             var context = EvaluationContext.Builder().Set("targetingKey", "key").Build();
             client.SetContext(context);
 
