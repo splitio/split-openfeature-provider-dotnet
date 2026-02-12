@@ -1,7 +1,7 @@
 # Split OpenFeature Provider for .NET
 [![Twitter Follow](https://img.shields.io/twitter/follow/splitsoftware.svg?style=social&label=Follow&maxAge=1529000)](https://twitter.com/intent/follow?screen_name=splitsoftware)
 
-## Overview
+## Overview 
 This Provider is designed to allow the use of OpenFeature with Split, the platform for controlled rollouts, serving features to your users via the Split feature flag to manage your complete customer experience.
 
 ## Compatibility
@@ -12,7 +12,7 @@ Below is a simple example that describes the instantiation of the Split Provider
 
 ```c#
 using OpenFeature;
-using Splitio.OpenFeature;
+using Splitio.OpenFeature.Provider;
 
 Api api = OpenFeature.Api.Instance;
 api.setProviderAsync(new Provider("YOUR_API_KEY"));
@@ -21,7 +21,7 @@ api.setProviderAsync(new Provider("YOUR_API_KEY"));
 If you are more familiar with Split or want access to other initialization options, you can provide a `Split Client` to the constructor. See the [Split .NET Documentation](https://help.split.io/hc/en-us/articles/360020240172--NET-SDK) for more information.
 ```c#
 using OpenFeature;
-using Splitio.OpenFeature;
+using Splitio.OpenFeature.Provider;
 using Splitio.Services.Client.Classes
 
 Api api = OpenFeature.Api.Instance;
