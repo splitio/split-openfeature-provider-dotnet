@@ -1,6 +1,6 @@
 CHANGES
 
-2.0.1 (Feb 11, 2025)
+2.1.0 (Feb 12, 2025)
 - Added Provider constructor that accepts API key (string) for simple SDK initialization
 - Added Provider constructor that accepts ISplitClient for dependency injection
 
