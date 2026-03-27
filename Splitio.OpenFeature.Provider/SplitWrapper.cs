@@ -16,7 +16,7 @@ namespace Splitio.OpenFeature.Provider
             this.splitClient = splitClient;
         }
 
-        public SplitWrapper(string sdkKey, ConfigurationOptions configs, int readyBlockTime=10000) 
+        public SplitWrapper(string sdkKey, ConfigurationOptions configs, int readyBlockTime = 10000)
         {
             var factory = new SplitFactory(sdkKey, configs);
             _log = WrapperAdapter.Instance().GetLogger(typeof(SplitWrapper));
@@ -32,9 +32,9 @@ namespace Splitio.OpenFeature.Provider
             }
         }
 
-        public ISplitClient GetSplitClient() 
-        { 
-            return splitClient; 
+        public ISplitClient GetSplitClient()
+        {
+            return splitClient;
         }
 
         public bool IsSDKReady()

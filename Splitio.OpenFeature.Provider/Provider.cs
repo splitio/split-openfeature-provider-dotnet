@@ -90,7 +90,7 @@ namespace Splitio.OpenFeature.Provider
         public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue,
             EvaluationContext context = null, CancellationToken cancellationToken = default)
         {
-            return Evaluate<bool>(flagKey, defaultValue, context);  
+            return Evaluate<bool>(flagKey, defaultValue, context);
         }
 
         public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue,
@@ -213,7 +213,7 @@ namespace Splitio.OpenFeature.Provider
             try
             {
                 T evaluationResult = Parse<T>(originalResult);
-	            return Task.FromResult(new ResolutionDetails<T>(
+                return Task.FromResult(new ResolutionDetails<T>(
                         flagKey,
                         evaluationResult,
                         variant: structureResult.Treatment,
@@ -265,7 +265,36 @@ namespace Splitio.OpenFeature.Provider
         {
             return context == null
                 ? new Dictionary<string, object>()
-                : context.AsDictionary().ToDictionary(x => x.Key, x => x.Value.AsObject);
+                : context.AsDictionary().ToDictionary(x => x.Key, x => ConvertValue(x.Value));
+        }
+
+        private static object ConvertValue(Value value)
+        {
+            var obj = value.AsObject;
+
+            // If it's a numeric type, check if we need to convert to int/long
+            if (obj is double doubleValue)
+            {
+                // Check if it's a whole number (no fractional part)
+                if (doubleValue == Math.Floor(doubleValue) && !double.IsInfinity(doubleValue) && !double.IsNaN(doubleValue))
+                {
+                    // It's a whole number, convert to int or long based on range
+                    if (doubleValue >= int.MinValue && doubleValue <= int.MaxValue)
+                    {
+                        return (int)doubleValue;
+                    }
+                    else if (doubleValue >= long.MinValue && doubleValue <= long.MaxValue)
+                    {
+                        return (long)doubleValue;
+                    }
+                }
+
+                // Has fractional part or out of int/long range, return as double
+                return doubleValue;
+            }
+
+            // Not a double, return as-is
+            return obj;
         }
 
         private static T Parse<T>(string strValue)
@@ -273,7 +302,8 @@ namespace Splitio.OpenFeature.Provider
             var type = typeof(T);
             if (type == typeof(bool))
             {
-                if (strValue.ToLower().Equals("true") || strValue.ToLower().Equals("on")) {
+                if (strValue.ToLower().Equals("true") || strValue.ToLower().Equals("on"))
+                {
                     object vv = true;
                     return (T)vv;
                 }
@@ -313,7 +343,7 @@ namespace Splitio.OpenFeature.Provider
             }
 
             throw new FormatException("Could not parse value");
-        }       
+        }
 
         private static void ValidateInitialContext(Dictionary<string, object> initialContext)
         {
@@ -336,7 +366,8 @@ namespace Splitio.OpenFeature.Provider
                 return false;
             }
 
-            if (String.IsNullOrEmpty(trackingEventName)) {
+            if (String.IsNullOrEmpty(trackingEventName))
+            {
                 _log.Error("Track: eventName should be non-empty string.");
                 return false;
             }
@@ -347,7 +378,7 @@ namespace Splitio.OpenFeature.Provider
                 return false;
             }
 
-            if (!evaluationContext.ContainsKey(Constants.TrafficType) || 
+            if (!evaluationContext.ContainsKey(Constants.TrafficType) ||
                 String.IsNullOrEmpty(evaluationContext.GetValue(Constants.TrafficType).AsString))
             {
                 _log.Error("Track: trafficType is invalid or mising.");
