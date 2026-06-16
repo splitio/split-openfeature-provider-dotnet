@@ -1,4 +1,6 @@
 CHANGES
+2.1.2 (Jun xx, 2026)
+- Fixed incorrect evaluation when passing an attribute with a string array.
 
 2.1.1 (Mar 27, 2026)
 - Fixed numeric type coercion in TransformContext: whole-number doubles are now converted to int/long instead of being passed as doubles to Split SDK

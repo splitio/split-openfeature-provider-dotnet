@@ -157,6 +157,21 @@ namespace ProviderTests
         }
 
         [TestMethod]
+        public async Task GetStringArraySplitTest()
+        {
+            await Api.Instance.SetProviderAsync(new Provider(initialContext));
+            client = OpenFeature.Api.Instance.GetClient();
+            var context = EvaluationContext.Builder()
+                .Set("targetingKey", "key")
+                .Set("keys", new Value(new List<Value> {  new Value("key") } ))
+                .Build();
+            client.SetContext(context);
+
+            var result = await client.GetStringValueAsync("some_other_feature", "on");
+            Assert.AreEqual("off", result);
+        }
+
+        [TestMethod]
         public async Task GetIntegerSplitTest()
         {
             await Api.Instance.SetProviderAsync(new Provider(initialContext));

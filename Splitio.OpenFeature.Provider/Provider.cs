@@ -9,6 +9,7 @@ using Splitio.Services.Logger;
 using Splitio.Services.Shared.Classes;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -195,7 +196,7 @@ namespace Splitio.OpenFeature.Provider
             {
                 return Task.FromResult(KeyNotFound<T>(flagKey, defaultValue));
             }
-
+            
             SplitResult structureResult = _splitWrapper.GetSplitClient().GetTreatmentWithConfig(key, flagKey, TransformContext(context));
             var originalResult = structureResult.Treatment;
 
@@ -291,6 +292,17 @@ namespace Splitio.OpenFeature.Provider
 
                 // Has fractional part or out of int/long range, return as double
                 return doubleValue;
+            }
+
+            if (obj is ImmutableList<Value> listValue)
+            {
+                List<string> to_return = new List<string>();
+                to_return = listValue.Select(n => n.AsString).ToList();
+//                foreach (Value item in listValue)
+//                {
+//                    to_return.Add(item.AsString);
+//                }
+                return to_return;
             }
 
             // Not a double, return as-is
