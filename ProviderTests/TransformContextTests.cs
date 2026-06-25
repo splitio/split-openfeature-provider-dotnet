@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenFeature.Model;
 using Splitio.OpenFeature.Provider;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -192,6 +193,16 @@ namespace ProviderTests
             Assert.AreEqual(true, result);
         }
 
+        [TestMethod]
+        public void ConvertValue_StringArrayValue_RemainsStringArray()
+        {
+            var value = new Value((object) new List<Value> { new Value("beta-testers"), new Value("premium") });
+            var result = _convertValueMethod.Invoke(null, new object[] { value });
+
+            Assert.IsInstanceOfType(result, typeof(List<string>));
+            Assert.AreEqual("beta-testers", ((List<string>) result)[0]);
+            Assert.AreEqual("premium", ((List<string>) result)[1]);
+        }
         #endregion
 
         #region TransformContext Integration Tests
