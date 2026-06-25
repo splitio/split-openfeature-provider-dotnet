@@ -1,5 +1,5 @@
 CHANGES
-2.1.2 (Jun xx, 2026)
+2.1.2 (Jun 25, 2026)
 - Fixed incorrect evaluation when passing an attribute with a string array.
 
 2.1.1 (Mar 27, 2026)
