@@ -101,8 +101,8 @@ pipeline:
                   name: harnessCoverage
                   identifier: harnessCoverage
                   template:
-                    templateRef: account.codeCoverage
-                    versionLabel: windowsV1
+                    templateRef: account.codeCoverageWindows
+                    versionLabel: v1
                     templateInputs:
                       type: Run
                       spec:
