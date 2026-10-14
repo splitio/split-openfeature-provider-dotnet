@@ -91,7 +91,29 @@ pipeline:
                         --no-build `
                         --collect:"XPlat Code Coverage" `
                         --results-directory:"./TestResults" `
-                        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+                        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura,opencover
+                      $report = Get-ChildItem -Path .\TestResults -Recurse -Filter coverage.cobertura.xml | Select-Object -First 1
+                      if (-not $report) { throw "Cobertura report not found under TestResults" }
+                      New-Item -ItemType Directory -Force -Path .\coverage | Out-Null
+                      Copy-Item $report.FullName .\coverage\cobertura.xml -Force
+                      Get-Item .\coverage\cobertura.xml | Format-List FullName,Length
+              - step:
+                  name: harnessCoverage
+                  identifier: harnessCoverage
+                  template:
+                    templateRef: account.codeCoverage
+                    versionLabel: windowsV1
+                    templateInputs:
+                      type: Run
+                      spec:
+                        envVariables:
+                          patch_coverage_percent: "80"
+                          file_path: coverage/cobertura.xml
+                          overall_coverage_percent: ""
+                          ignore_failure: "false"
+                          exclude: "**/bin/**,**/obj/**,**/*Tests*/**,**/*Test.cs,**/*Tests.cs"
+                  when:
+                    stageStatus: Success
               - step:
                   type: Run
                   name: SonarQube End Analysis
