@@ -192,12 +192,16 @@ namespace Splitio.OpenFeature.Provider
             }
 
             var key = GetTargetingKey(context);
-            if (key == null)
+            if (string.IsNullOrEmpty(key))
             {
                 return Task.FromResult(KeyNotFound<T>(flagKey, defaultValue));
             }
-            
-            SplitResult structureResult = _splitWrapper.GetSplitClient().GetTreatmentWithConfig(key, flagKey, TransformContext(context));
+
+            var bucketingKey = GetBucketingKey(context);
+            var attributes = TransformContext(context);
+            SplitResult structureResult = bucketingKey == null
+                ? _splitWrapper.GetSplitClient().GetTreatmentWithConfig(key, flagKey, attributes)
+                : _splitWrapper.GetSplitClient().GetTreatmentWithConfig(new Key(key, bucketingKey), flagKey, attributes);
             var originalResult = structureResult.Treatment;
 
             if (originalResult == Constants.CONTROL)
@@ -254,7 +258,7 @@ namespace Splitio.OpenFeature.Provider
         private string GetTargetingKey(EvaluationContext context)
         {
             Value key;
-            if (!context.TryGetValue("targetingKey", out key))
+            if (!context.TryGetValue(Constants.TargetingKey, out key))
             {
                 _log.Error("Split provider: targeting key missing!");
                 return null;
@@ -262,11 +266,40 @@ namespace Splitio.OpenFeature.Provider
             return key.AsString;
         }
 
+        /// <summary>
+        /// Reads the reserved "bucketingKey" context attribute.
+        /// Returns null when absent, null, blank or not a string; the last two log a warning
+        /// that names the attribute and the reason but never the value.
+        /// </summary>
+        private string GetBucketingKey(EvaluationContext context)
+        {
+            if (context == null || !context.TryGetValue(Constants.BucketingKey, out var value) || value == null || value.IsNull)
+            {
+                return null;
+            }
+
+            if (!value.IsString)
+            {
+                _log.Warn("Split provider: bucketingKey ignored: not a string. Evaluating with the targeting key only.");
+                return null;
+            }
+
+            if (string.IsNullOrWhiteSpace(value.AsString))
+            {
+                _log.Warn("Split provider: bucketingKey ignored: blank. Evaluating with the targeting key only.");
+                return null;
+            }
+
+            return value.AsString.Trim();
+        }
+
         private static Dictionary<string, object> TransformContext(EvaluationContext context)
         {
             return context == null
                 ? new Dictionary<string, object>()
-                : context.AsDictionary().ToDictionary(x => x.Key, x => ConvertValue(x.Value));
+                : context.AsDictionary()
+                    .Where(x => x.Key != Constants.BucketingKey)
+                    .ToDictionary(x => x.Key, x => ConvertValue(x.Value));
         }
 
         private static object ConvertValue(Value value)

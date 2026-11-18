@@ -1,4 +1,10 @@
 CHANGES
+2.2.0 (Nov 18, 2026)
+- Added support for Split bucketing keys through the reserved `bucketingKey` evaluation context attribute. When it is a non-blank string (surrounding whitespace is trimmed), flags are evaluated with `new Key(targetingKey, bucketingKey)`; blank or non-string values are ignored with a warning.
+- Behavior change: the `bucketingKey` context attribute is no longer forwarded to Split as a targeting attribute, so targeting rules on an attribute named `bucketingKey` no longer match.
+- Behavior change: a `bucketingKey` longer than 250 characters makes the Split SDK return `control`; the evaluation returns the default value with FLAG_NOT_FOUND, as for an over-length targeting key.
+- Behavior change: an empty targeting key now returns TARGETING_KEY_MISSING instead of FLAG_NOT_FOUND.
+
 2.1.2 (Jun 25, 2026)
 - Fixed incorrect evaluation when passing an attribute with a string array.
 

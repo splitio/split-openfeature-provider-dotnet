@@ -73,6 +73,25 @@ Api.Instance.SetEvaluationContext(context);
 
 If the context was set at the client or API level, it is not required to provide it during flag evaluation.
 
+### Bucketing key
+
+Split can bucket on a key other than the targeting key (the Split *bucketing key*).
+Set it through the reserved `bucketingKey` context attribute, next to `targetingKey` and `trafficType`:
+
+```csharp
+var context = EvaluationContext.Builder()
+    .Set("targetingKey", "user-123")      // matching key: used by targeting rules, segments and individual targets
+    .Set("bucketingKey", "account-42")    // bucketing key: used for the percentage split
+    .Build();
+var result = await client.GetBooleanValueAsync("boolFlag", false, context);
+```
+
+- `bucketingKey` must be a non-blank string; surrounding whitespace is trimmed. A blank or non-string value is ignored with a warning, and the flag is evaluated with the targeting key only.
+- `bucketingKey` is reserved: it is **not** forwarded to Split as a targeting attribute.
+- A targeting key is still required; `bucketingKey` alone returns `TARGETING_KEY_MISSING`.
+- As with the targeting key, a value longer than 250 characters is rejected by the Split SDK: the evaluation returns the default value with `FLAG_NOT_FOUND` (`control`).
+- `Track` is unchanged and sends only the targeting key.
+
 ## Submitting issues
  
 The Split team monitors all issues submitted to this [issue tracker](https://github.com/splitio/split-openfeature-provider-dotnet/issues). We encourage you to use this issue tracker to submit any bug reports, feedback, and feature enhancements. We'll do our best to respond in a timely manner.

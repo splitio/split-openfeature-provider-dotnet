@@ -8,6 +8,8 @@
         public const string SdkApiKey = "SdkKey";
         public const string ConfigKey = "ConfigOptions";
         public const string TrafficType = "trafficType";
+        public const string TargetingKey = "targetingKey";
+        public const string BucketingKey = "bucketingKey";
         public const string ReadyBlockTime = "ReadyBlockTime";
 
     }

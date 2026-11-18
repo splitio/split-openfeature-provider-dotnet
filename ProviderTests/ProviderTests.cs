@@ -3,11 +3,15 @@ using Moq;
 using OpenFeature;
 using OpenFeature.Constant;
 using OpenFeature.Model;
+using Splitio.Domain;
 using Splitio.OpenFeature.Provider;
 using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
+using Splitio.Services.Logger;
+using Splitio.Services.Shared.Classes;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -486,6 +490,196 @@ namespace ProviderTests
             catch (Exception) { }
             Assert.AreEqual(0, splitClient.Invocations.Count);
         }
+
+        #region bucketingKey (CONTRACT C8)
+
+        private static (Provider Provider, Mock<ISplitClient> Split, Mock<ISplitLogger> Log) BucketingKeyProvider()
+        {
+            // Provider reads its logger from WrapperAdapter in the constructor.
+            var log = new Mock<ISplitLogger>();
+            WrapperAdapter.Instance().SetCustomerLogger(log.Object);
+            var split = new Mock<ISplitClient>();
+            split.Setup(c => c.GetTreatmentWithConfig(It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()))
+                .Returns(new SplitResult("on", null));
+            split.Setup(c => c.GetTreatmentWithConfig(It.IsAny<Key>(), It.IsAny<string>(),
+                    It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()))
+                .Returns(new SplitResult("on", null));
+            return (new Provider(split.Object), split, log);
+        }
+
+        private static void VerifyPlainKey(Mock<ISplitClient> split, string key)
+        {
+            split.Verify(c => c.GetTreatmentWithConfig(key, "flag", It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()), Times.Once);
+            split.Verify(c => c.GetTreatmentWithConfig(It.IsAny<Key>(), It.IsAny<string>(), It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()), Times.Never);
+        }
+
+        // C8.1
+        [TestMethod]
+        public async Task BucketingKey_Valid_SendsMatchingAndBucketingKey()
+        {
+            var (provider, split, log) = BucketingKeyProvider();
+            var ctx = EvaluationContext.Builder().SetTargetingKey("u1").Set("bucketingKey", "b1").Build();
+
+            var result = await provider.ResolveBooleanValueAsync("flag", false, ctx);
+
+            Assert.IsTrue(result.Value);
+            Assert.AreEqual(ErrorType.None, result.ErrorType);
+            split.Verify(c => c.GetTreatmentWithConfig(
+                It.Is<Key>(k => k.matchingKey == "u1" && k.bucketingKey == "b1" && k.bucketingKeyHadValue),
+                "flag", It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()), Times.Once);
+            log.Verify(l => l.Warn(It.IsAny<string>()), Times.Never);
+        }
+
+        // C8.1 + C11: the .NET SDK does not trim, so the provider trims (D1).
+        [TestMethod]
+        public async Task BucketingKey_Padded_IsTrimmed()
+        {
+            var (provider, split, _) = BucketingKeyProvider();
+            var ctx = EvaluationContext.Builder().SetTargetingKey("u1").Set("bucketingKey", " b1 ").Build();
+
+            await provider.ResolveBooleanValueAsync("flag", false, ctx);
+
+            split.Verify(c => c.GetTreatmentWithConfig(It.Is<Key>(k => k.matchingKey == "u1" && k.bucketingKey == "b1"),
+                "flag", It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()), Times.Once);
+        }
+
+        // C8.2
+        [TestMethod]
+        public async Task BucketingKey_AbsentOrNull_SendsPlainTargetingKey()
+        {
+            foreach (var ctx in new[]
+            {
+                EvaluationContext.Builder().SetTargetingKey("u1").Build(),
+                EvaluationContext.Builder().SetTargetingKey("u1").Set("bucketingKey", new Value()).Build(),
+            })
+            {
+                var (provider, split, log) = BucketingKeyProvider();
+                var result = await provider.ResolveBooleanValueAsync("flag", false, ctx);
+                Assert.AreEqual(ErrorType.None, result.ErrorType);
+                VerifyPlainKey(split, "u1");
+                log.Verify(l => l.Warn(It.IsAny<string>()), Times.Never);
+            }
+        }
+
+        // C8.3 + Q3
+        [TestMethod]
+        public async Task BucketingKey_BlankOrNonString_IgnoredWithWarning()
+        {
+            var cases = new (Value Value, string Reason)[]
+            {
+                (new Value(""), "blank"),
+                (new Value("   "), "blank"),
+                (new Value(12345), "not a string"),
+                (new Value(true), "not a string"),
+                (new Value(Structure.Builder().Set("x", "s3cr3t").Build()), "not a string"),
+                (new Value(new List<Value> { new Value("s3cr3t") }), "not a string"),
+            };
+            foreach (var (value, reason) in cases)
+            {
+                var (provider, split, log) = BucketingKeyProvider();
+                var ctx = EvaluationContext.Builder().SetTargetingKey("u1").Set("bucketingKey", value).Build();
+
+                var result = await provider.ResolveBooleanValueAsync("flag", false, ctx);
+
+                Assert.AreEqual(ErrorType.None, result.ErrorType, $"{value.AsObject}");
+                Assert.IsTrue(result.Value);
+                VerifyPlainKey(split, "u1");
+                log.Verify(l => l.Warn(It.Is<string>(m => m.Contains("bucketingKey") && m.Contains(reason)
+                    && !m.Contains("12345") && !m.Contains("s3cr3t"))), Times.Once, $"{value.AsObject}");
+            }
+        }
+
+        // C8.4 (C3), valid and invalid
+        [TestMethod]
+        public async Task BucketingKey_NeverForwardedAsAttribute()
+        {
+            foreach (var value in new[] { new Value("b1"), new Value("   "), new Value(1) })
+            {
+                var (provider, split, _) = BucketingKeyProvider();
+                var captured = new List<Dictionary<string, object>>();
+                split.Setup(c => c.GetTreatmentWithConfig(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()))
+                    .Callback<string, string, Dictionary<string, object>, EvaluationOptions>((k, f, a, o) => captured.Add(a))
+                    .Returns(new SplitResult("on", null));
+                split.Setup(c => c.GetTreatmentWithConfig(It.IsAny<Key>(), It.IsAny<string>(), It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()))
+                    .Callback<Key, string, Dictionary<string, object>, EvaluationOptions>((k, f, a, o) => captured.Add(a))
+                    .Returns(new SplitResult("on", null));
+                var ctx = EvaluationContext.Builder().SetTargetingKey("u1")
+                    .Set("bucketingKey", value).Set("BucketingKey", "x").Set("bucketing_key", "y").Build();
+
+                await provider.ResolveBooleanValueAsync("flag", false, ctx);
+
+                Assert.AreEqual(1, captured.Count);
+                Assert.IsFalse(captured[0].ContainsKey("bucketingKey"), $"{value.AsObject}");
+                Assert.AreEqual("x", captured[0]["BucketingKey"]);
+                Assert.AreEqual("y", captured[0]["bucketing_key"]);
+            }
+        }
+
+        // C8.4b (C11, Q5): no provider-side length check; the real SDK returns control.
+        [TestMethod]
+        public async Task BucketingKey_OverLength_PassedThrough_SdkControl()
+        {
+            var (provider, split, _) = BucketingKeyProvider();
+            var longKey = new string('b', 251);
+            var ctx = EvaluationContext.Builder().SetTargetingKey("u1").Set("bucketingKey", longKey).Build();
+            await provider.ResolveBooleanValueAsync("flag", false, ctx);
+            split.Verify(c => c.GetTreatmentWithConfig(It.Is<Key>(k => k.bucketingKey == longKey),
+                "flag", It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()), Times.Once);
+
+            // Real (localhost) SDK: "key" is whitelisted to "on" for my_feature.
+            var real = new Provider(sdk);
+            var details = await real.ResolveBooleanValueAsync("my_feature", false,
+                EvaluationContext.Builder().SetTargetingKey("key").Set("bucketingKey", longKey).Build());
+            Assert.IsFalse(details.Value);
+            Assert.AreEqual(ErrorType.FlagNotFound, details.ErrorType);
+            Assert.AreEqual("control", details.Variant);
+        }
+
+        // C8.1 against the real (localhost) SDK: matching-key rules still match.
+        [TestMethod]
+        public async Task BucketingKey_Valid_RealSdk_MatchesOnTargetingKey()
+        {
+            var real = new Provider(sdk);
+            var details = await real.ResolveBooleanValueAsync("my_feature", false,
+                EvaluationContext.Builder().SetTargetingKey("key").Set("bucketingKey", "other").Build());
+            Assert.IsTrue(details.Value);
+            Assert.AreEqual(ErrorType.None, details.ErrorType);
+        }
+
+        // C8.5 (C4, server) + D2
+        [TestMethod]
+        public async Task BucketingKey_MissingOrEmptyTargetingKey_TargetingKeyMissing()
+        {
+            foreach (var ctx in new[]
+            {
+                EvaluationContext.Builder().Set("bucketingKey", "b1").Build(),
+                EvaluationContext.Builder().SetTargetingKey("").Set("bucketingKey", "b1").Build(),
+            })
+            {
+                var (provider, split, _) = BucketingKeyProvider();
+                var result = await provider.ResolveBooleanValueAsync("flag", true, ctx);
+                Assert.IsTrue(result.Value);
+                Assert.AreEqual(ErrorType.TargetingKeyMissing, result.ErrorType);
+                split.Verify(c => c.GetTreatmentWithConfig(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()), Times.Never);
+                split.Verify(c => c.GetTreatmentWithConfig(It.IsAny<Key>(), It.IsAny<string>(), It.IsAny<Dictionary<string, object>>(), It.IsAny<EvaluationOptions>()), Times.Never);
+            }
+        }
+
+        // C8.6 (C5)
+        [TestMethod]
+        public void BucketingKey_Track_SendsTargetingKeyOnly()
+        {
+            var (provider, split, _) = BucketingKeyProvider();
+            var ctx = EvaluationContext.Builder().SetTargetingKey("u1").Set("trafficType", "user").Set("bucketingKey", "b1").Build();
+
+            provider.Track("event", ctx, TrackingEventDetails.Builder().SetValue(1).Set("prop", "val").Build());
+
+            split.Verify(c => c.Track("u1", "user", "event", 1d,
+                It.Is<Dictionary<string, object>>(p => !p.ContainsKey("bucketingKey") && !p.Values.Contains("b1"))), Times.Once);
+        }
+
+        #endregion
 
         private static bool StructuresMatch(Structure s1, Structure s2)
         {

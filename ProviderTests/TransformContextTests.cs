@@ -286,5 +286,45 @@ namespace ProviderTests
         }
 
         #endregion
+
+        #region bucketingKey (CONTRACT C3)
+
+        [TestMethod]
+        public void TransformContext_RemovesBucketingKey_ValidOrInvalid()
+        {
+            foreach (var value in new[] { new Value("b1"), new Value("   "), new Value(1), new Value() })
+            {
+                var context = EvaluationContext.Builder()
+                    .Set("targetingKey", "user123")
+                    .Set("bucketingKey", value)
+                    .Set("plan", "pro")
+                    .Build();
+
+                var result = (Dictionary<string, object>)_transformContextMethod.Invoke(null, new object[] { context });
+
+                Assert.IsFalse(result.ContainsKey("bucketingKey"), $"{value.AsObject}");
+                Assert.AreEqual("pro", result["plan"]);
+                Assert.AreEqual("user123", result["targetingKey"]);
+            }
+        }
+
+        [TestMethod]
+        public void TransformContext_KeepsNearMissBucketingKeyNames()
+        {
+            var context = EvaluationContext.Builder()
+                .Set("targetingKey", "user123")
+                .Set("BucketingKey", "a")
+                .Set("bucketing_key", "b")
+                .Set("bucketingkey", "c")
+                .Build();
+
+            var result = (Dictionary<string, object>)_transformContextMethod.Invoke(null, new object[] { context });
+
+            Assert.AreEqual("a", result["BucketingKey"]);
+            Assert.AreEqual("b", result["bucketing_key"]);
+            Assert.AreEqual("c", result["bucketingkey"]);
+        }
+
+        #endregion
     }
 }
